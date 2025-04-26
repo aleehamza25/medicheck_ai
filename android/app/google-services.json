@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "569497523677",
+    "project_id": "health-assistant-ba5f8",
+    "storage_bucket": "health-assistant-ba5f8.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:569497523677:android:123a34b21b15776c285234",
+        "android_client_info": {
+          "package_name": "com.ibits.health_assistant"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB_uDYeNwmh30jBvhrIOAeJzJDGJlUPBeE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
