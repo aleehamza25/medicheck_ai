@@ -1,0 +1,734 @@
+[
+  {
+    "Doctor Name": "Dr. Khalid Mehmood",
+    "Specialization": "Anesthesiologist",
+    "Clinic / Hospital": "Punjab Institute of Cardiology",
+    "City": "Lahore",
+    "Phone Number": "042-99203051"
+  },
+  {
+    "Doctor Name": "Dr. Shahbaz A. Kureshi",
+    "Specialization": "Andrologist",
+    "Clinic / Hospital": "Hameed Latif Hospital",
+    "City": "Lahore",
+    "Phone Number": "042-35862623"
+  },
+  {
+    "Doctor Name": "Dr. Maria Khalid",
+    "Specialization": "Autism Consultant",
+    "Clinic / Hospital": "Behbud School Clinic",
+    "City": "Karachi",
+    "Phone Number": "021-35862357"
+  },
+  {
+    "Doctor Name": "Dr. Amir Raza",
+    "Specialization": "Bariatric Surgeon",
+    "Clinic / Hospital": "KKT Orthopedic Spine Center",
+    "City": "Lahore",
+    "Phone Number": "042-35786771"
+  },
+  {
+    "Doctor Name": "Dr. Fawad Rizwan",
+    "Specialization": "Breast Surgeon",
+    "Clinic / Hospital": "Doctors Hospital",
+    "City": "Lahore",
+    "Phone Number": "042-35302701"
+  },
+  {
+    "Doctor Name": "Dr. Sohail Khan",
+    "Specialization": "Cancer Surgeon",
+    "Clinic / Hospital": "Shifa International Hospital",
+    "City": "Islamabad",
+    "Phone Number": "051-8463666"
+  },
+  {
+    "Doctor Name": "Dr. Aysha Ameen",
+    "Specialization": "Cardiac Surgeon",
+    "Clinic / Hospital": "Chughtai Medical Center",
+    "City": "Lahore",
+    "Phone Number": "042-111456789"
+  },
+  {
+    "Doctor Name": "Dr. Sania Nishtar",
+    "Specialization": "Cardiologist",
+    "Clinic / Hospital": "National Institute of Cardiovascular Diseases",
+    "City": "Islamabad",
+    "Phone Number": "051-9261967"
+  },
+  {
+    "Doctor Name": "Dr. Zubair Mirza",
+    "Specialization": "Cardiologist",
+    "Clinic / Hospital": "Ziauddin Hospital",
+    "City": "Karachi",
+    "Phone Number": "021-35862937"
+  },
+  {
+    "Doctor Name": "Dr. Naseem Sheikh",
+    "Specialization": "Cardiothoracic Surgeon",
+    "Clinic / Hospital": "NICVD",
+    "City": "Karachi",
+    "Phone Number": "021-99201271"
+  },
+  {
+    "Doctor Name": "Dr. Adeel Asad",
+    "Specialization": "Chest/Respiratory Specialist",
+    "Clinic / Hospital": "PAF Hospital",
+    "City": "Sargodha",
+    "Phone Number": "048-3760082"
+  },
+  {
+    "Doctor Name": "Dr. Hira Maqsood",
+    "Specialization": "Child Psychologist",
+    "Clinic / Hospital": "Lahore Psychology Center",
+    "City": "Lahore",
+    "Phone Number": "0321-4885251"
+  },
+  {
+    "Doctor Name": "Dr. Afshan Shahid",
+    "Specialization": "Clinical Nutritionist",
+    "Clinic / Hospital": "Akram Medical Complex",
+    "City": "Lahore",
+    "Phone Number": "042-35710400"
+  },
+  {
+    "Doctor Name": "Dr. Nazish Affan",
+    "Specialization": "Clinical Nutrition & Wellness",
+    "Clinic / Hospital": "Advanced GI & Liver Centre (Liver Tower)",
+    "City": "Multan",
+    "Phone Number": "0311-4697089"
+  },
+  {
+    "Doctor Name": "Dr. Sobia Bilal",
+    "Specialization": "Clinical Psychologist",
+    "Clinic / Hospital": "Bahria International Hospital",
+    "City": "Lahore",
+    "Phone Number": "042-35458401"
+  },
+  {
+    "Doctor Name": "Dr. Hania Kamil",
+    "Specialization": "Community Medicine Specialist",
+    "Clinic / Hospital": "Punjab Medical Centre",
+    "City": "Lahore",
+    "Phone Number": "042-37577662"
+  },
+  {
+    "Doctor Name": "Dr. Ayesha Abid",
+    "Specialization": "Consultant Physician",
+    "Clinic / Hospital": "Advanced GI & Liver Centre",
+    "City": "Multan",
+    "Phone Number": "0311-4697089"
+  },
+  {
+    "Doctor Name": "Dr. Saima Javed",
+    "Specialization": "Cosmetic Dentist",
+    "Clinic / Hospital": "Riphah International Dental Hospital",
+    "City": "Lahore",
+    "Phone Number": "042-111000111"
+  },
+  {
+    "Doctor Name": "Dr. Ayesha Mansoor",
+    "Specialization": "Cosmetic Surgeon",
+    "Clinic / Hospital": "Cosmetica Clinic",
+    "City": "Lahore",
+    "Phone Number": "0300-8808191"
+  },
+  {
+    "Doctor Name": "Dr. Irfan Bashir",
+    "Specialization": "Dermatologist",
+    "Clinic / Hospital": "Cosmetique Clinic",
+    "City": "Lahore",
+    "Phone Number": "0321-4940006"
+  },
+  {
+    "Doctor Name": "Dr. Iram Bokhari",
+    "Specialization": "Dermatologist",
+    "Clinic / Hospital": "Skin & Laser Clinic",
+    "City": "Islamabad",
+    "Phone Number": "0301-5357010"
+  },
+  {
+    "Doctor Name": "Dr. Riffat Jaleel",
+    "Specialization": "Diabetologist",
+    "Clinic / Hospital": "OMI Hospital",
+    "City": "Karachi",
+    "Phone Number": "021-32258075"
+  },
+  {
+    "Doctor Name": "Dr. Muhammad Umar",
+    "Specialization": "Diabetologist",
+    "Clinic / Hospital": "Advanced GI & Liver Centre",
+    "City": "Multan",
+    "Phone Number": "0311-4697089"
+  },
+  {
+    "Doctor Name": "Dr. Attiya Mubarik",
+    "Specialization": "ENT Specialist",
+    "Clinic / Hospital": "Shalamar Hospital",
+    "City": "Lahore",
+    "Phone Number": "042-111205205"
+  },
+  {
+    "Doctor Name": "Dr. Yasir Mehmood",
+    "Specialization": "ENT Surgeon",
+    "Clinic / Hospital": "Quaid-e-Azam International Hospital",
+    "City": "Islamabad",
+    "Phone Number": "051-8449100"
+  },
+  {
+    "Doctor Name": "Dr. Salman Shah",
+    "Specialization": "Endocrinologist",
+    "Clinic / Hospital": "Omar Hospital",
+    "City": "Lahore",
+    "Phone Number": "042-111111127"
+  },
+  {
+    "Doctor Name": "Dr. Shabnam Iqbal",
+    "Specialization": "Endovascular Surgeon",
+    "Clinic / Hospital": "Quaid-e-Azam International Hospital",
+    "City": "Islamabad",
+    "Phone Number": "051-8449100"
+  },
+  {
+    "Doctor Name": "Dr. Khalid Jamil",
+    "Specialization": "Ophthalmologist",
+    "Clinic / Hospital": "Hashmanis Hospital",
+    "City": "Karachi",
+    "Phone Number": "021-35875131"
+  },
+  {
+    "Doctor Name": "Dr. Khalid Iqbal",
+    "Specialization": "Eye Surgeon",
+    "Clinic / Hospital": "LRBT Free Eye Hospital",
+    "City": "Karachi",
+    "Phone Number": "021-35113132"
+  },
+  {
+    "Doctor Name": "Dr. Bushra Afzal",
+    "Specialization": "Family Medicine",
+    "Clinic / Hospital": "Health City Hospital",
+    "City": "Islamabad",
+    "Phone Number": "051-2723513"
+  },
+  {
+    "Doctor Name": "Dr. Asim Bhatti",
+    "Specialization": "Forensic Medicine Expert",
+    "Clinic / Hospital": "King Edward Medical University",
+    "City": "Lahore",
+    "Phone Number": "042-99211145"
+  },
+  {
+    "Doctor Name": "Dr. Umer Farooq",
+    "Specialization": "Gastroenterologist",
+    "Clinic / Hospital": "Faisal Hospital",
+    "City": "Faisalabad",
+    "Phone Number": "041-8719800"
+  },
+  {
+    "Doctor Name": "Dr. Affan Qaiser",
+    "Specialization": "Gastroenterologist",
+    "Clinic / Hospital": "Advanced GI & Liver Centre (Director)",
+    "City": "Multan",
+    "Phone Number": "0311-4697089"
+  },
+  {
+    "Doctor Name": "Dr. Hina Qaiser",
+    "Specialization": "Gastroenterologist (Junior)",
+    "Clinic / Hospital": "Advanced GI & Liver Centre",
+    "City": "Multan",
+    "Phone Number": "0311-4697089"
+  },
+  {
+    "Doctor Name": "Dr. Nasir Qureshi",
+    "Specialization": "General Physician",
+    "Clinic / Hospital": "CMH Hospital",
+    "City": "Rawalpindi",
+    "Phone Number": "051-9273420"
+  },
+  {
+    "Doctor Name": "Dr. Junaid Rashid",
+    "Specialization": "General Surgeon",
+    "Clinic / Hospital": "Lahore General Hospital",
+    "City": "Lahore",
+    "Phone Number": "042-99264092"
+  },
+  {
+    "Doctor Name": "Dr. Mehreen Zafar",
+    "Specialization": "Geneticist",
+    "Clinic / Hospital": "AKUH Genetics Clinic",
+    "City": "Karachi",
+    "Phone Number": "021-34930051"
+  },
+  {
+    "Doctor Name": "Dr. Shaista Azhar",
+    "Specialization": "Geriatrician",
+    "Clinic / Hospital": "Shifa International Hospital",
+    "City": "Islamabad",
+    "Phone Number": "051-8463666"
+  },
+  {
+    "Doctor Name": "Dr. Ammar Ahmed",
+    "Specialization": "Hand Surgeon",
+    "Clinic / Hospital": "Quaid-e-Azam International Hospital",
+    "City": "Islamabad",
+    "Phone Number": "051-8449100"
+  },
+  {
+    "Doctor Name": "Dr. Hafeezullah Babar",
+    "Specialization": "Hematologist",
+    "Clinic / Hospital": "Bolan Medical Complex",
+    "City": "Quetta",
+    "Phone Number": "081-9213070"
+  },
+  {
+    "Doctor Name": "Dr. Mujeeb Khan",
+    "Specialization": "Hepatologist",
+    "Clinic / Hospital": "Khyber Teaching Hospital",
+    "City": "Peshawar",
+    "Phone Number": "091-9216330"
+  },
+  {
+    "Specialization": "Eye Surgeon",
+    "Clinic / Hospital": "LRBT Free Eye Hospital",
+    "City": "Karachi",
+    "Phone Number": "021-35113132"
+  },
+  {
+    "Doctor Name": "(Continued in next message due to length)",
+    "Specialization": "Medical Specialist",
+    "Clinic / Hospital": "Dow University Hospital",
+    "City": "Karachi",
+    "Phone Number": "021-99215754"
+  },
+  {
+    "Specialization": "Clinical Psychologist",
+    "Clinic / Hospital": "Bahria International Hospital",
+    "City": "Lahore",
+    "Phone Number": "042-35458401"
+  },
+  {
+    "Doctor Name": "Complete Doctor Directory \u2013 Table Continued",
+    "Specialization": "Cancer Surgeon",
+    "Clinic / Hospital": "Shifa International Hospital",
+    "City": "Islamabad",
+    "Phone Number": "051-8463666"
+  },
+  {
+    "Specialization": "Laparoscopic Surgeon",
+    "Clinic / Hospital": "Patel Hospital",
+    "City": "Karachi",
+    "Phone Number": "021-34994371"
+  },
+  {
+    "Doctor Name": "Doctor Name",
+    "Specialization": "Specialization",
+    "Clinic / Hospital": "Clinic / Hospital",
+    "City": "City",
+    "Phone Number": "Phone Number"
+  },
+  {
+    "Doctor Name": "Dr. Salman Ayub",
+    "Specialization": "Immunologist",
+    "Clinic / Hospital": "Quaid-e-Azam International Hospital",
+    "City": "Islamabad",
+    "Phone Number": "051-8449100"
+  },
+  {
+    "Doctor Name": "Dr. Shehla Baqi",
+    "Specialization": "Infectious Disease Specialist",
+    "Clinic / Hospital": "Aga Khan University Hospital",
+    "City": "Karachi",
+    "Phone Number": "021-34930051"
+  },
+  {
+    "Doctor Name": "Dr. Zeeshan Sheikh",
+    "Specialization": "Internal Medicine Specialist",
+    "Clinic / Hospital": "Omar Hospital & Cardiac Centre",
+    "City": "Lahore",
+    "Phone Number": "042-111111127"
+  },
+  {
+    "Doctor Name": "Dr. Shehzad Khalil",
+    "Specialization": "Interventional Cardiologist",
+    "Clinic / Hospital": "Punjab Institute of Cardiology",
+    "City": "Lahore",
+    "Phone Number": "042-99203051"
+  },
+  {
+    "Doctor Name": "Dr. Waleed Tariq",
+    "Specialization": "Interventional Radiologist",
+    "Clinic / Hospital": "Doctors Hospital",
+    "City": "Lahore",
+    "Phone Number": "042-35302701"
+  },
+  {
+    "Doctor Name": "Dr. Naureen Akhtar",
+    "Specialization": "IVF Consultant",
+    "Clinic / Hospital": "Australian Concept Infertility Medical Center",
+    "City": "Lahore",
+    "Phone Number": "042-35896801"
+  },
+  {
+    "Doctor Name": "Dr. Hassan Mujtaba",
+    "Specialization": "IVF / Fertility Consultant",
+    "Clinic / Hospital": "Life IVF Centre",
+    "City": "Faisalabad",
+    "Phone Number": "041-8720377"
+  },
+  {
+    "Doctor Name": "Dr. Syed Junaid Ali",
+    "Specialization": "Laparoscopic Surgeon",
+    "Clinic / Hospital": "Patel Hospital",
+    "City": "Karachi",
+    "Phone Number": "021-34994371"
+  },
+  {
+    "Doctor Name": "Dr. Zeeshan Bhutta",
+    "Specialization": "Liver Transplant Surgeon",
+    "Clinic / Hospital": "Hameed Latif Hospital",
+    "City": "Lahore",
+    "Phone Number": "042-35862623"
+  },
+  {
+    "Doctor Name": "Dr. Saad Siddiqui",
+    "Specialization": "Medical Specialist",
+    "Clinic / Hospital": "Dow University Hospital",
+    "City": "Karachi",
+    "Phone Number": "021-99215754"
+  },
+  {
+    "Doctor Name": "Dr. Rabia Nawaz",
+    "Specialization": "Medical Officer",
+    "Clinic / Hospital": "Advanced GI & Liver Centre",
+    "City": "Multan",
+    "Phone Number": "0311-4697089"
+  },
+  {
+    "Doctor Name": "Dr. Rubina Sohail",
+    "Specialization": "Maternal Fetal Medicine Specialist",
+    "Clinic / Hospital": "Hameed Latif Hospital",
+    "City": "Lahore",
+    "Phone Number": "042-35862623"
+  },
+  {
+    "Doctor Name": "Dr. Shamaila Batool",
+    "Specialization": "Neurologist",
+    "Clinic / Hospital": "MedCity International Hospital",
+    "City": "Islamabad",
+    "Phone Number": "051-8749999"
+  },
+  {
+    "Doctor Name": "Dr. Tariq Majeed",
+    "Specialization": "Neuromusculoskeletal Specialist",
+    "Clinic / Hospital": "CMH Lahore",
+    "City": "Lahore",
+    "Phone Number": "042-36605517"
+  },
+  {
+    "Doctor Name": "Dr. Hassan Nisar",
+    "Specialization": "Nuclear Medicine Specialist",
+    "Clinic / Hospital": "Armed Forces Institute of Pathology",
+    "City": "Rawalpindi",
+    "Phone Number": "051-9271545"
+  },
+  {
+    "Doctor Name": "Dr. Sadia Faisal",
+    "Specialization": "Neonatologist",
+    "Clinic / Hospital": "Ali Medical Centre",
+    "City": "Islamabad",
+    "Phone Number": "051-8090200"
+  },
+  {
+    "Doctor Name": "Dr. Seema Zia",
+    "Specialization": "Gynecologist",
+    "Clinic / Hospital": "South City Hospital",
+    "City": "Karachi",
+    "Phone Number": "021-35292707"
+  },
+  {
+    "Doctor Name": "Dr. Nighat Shah",
+    "Specialization": "Obstetrician",
+    "Clinic / Hospital": "Australian Concept Medical Center",
+    "City": "Karachi",
+    "Phone Number": "021-34590065"
+  },
+  {
+    "Doctor Name": "Dr. Khalid Mehmood",
+    "Specialization": "Occupational Therapist",
+    "Clinic / Hospital": "RehabCure",
+    "City": "Lahore",
+    "Phone Number": "042-35899856"
+  },
+  {
+    "Doctor Name": "Dr. Saeed Minhas",
+    "Specialization": "Orthopedic Surgeon",
+    "Clinic / Hospital": "Shifa International Hospital",
+    "City": "Islamabad",
+    "Phone Number": "051-8463666"
+  },
+  {
+    "Doctor Name": "Dr. Faizan Qureshi",
+    "Specialization": "Orthodontist",
+    "Clinic / Hospital": "Dental Square",
+    "City": "Karachi",
+    "Phone Number": "0332-2255566"
+  },
+  {
+    "Doctor Name": "Dr. Shahid Noor",
+    "Specialization": "Spine Specialist",
+    "Clinic / Hospital": "Liaquat National Hospital",
+    "City": "Karachi",
+    "Phone Number": "021-34412618"
+  },
+  {
+    "Doctor Name": "Dr. Tanveer Awan",
+    "Specialization": "Pain Specialist",
+    "Clinic / Hospital": "Zobia Hospital",
+    "City": "Islamabad",
+    "Phone Number": "051-111962111"
+  },
+  {
+    "Doctor Name": "Dr. Sadia Shakeel",
+    "Specialization": "Pediatrician",
+    "Clinic / Hospital": "Liaquat National Hospital",
+    "City": "Karachi",
+    "Phone Number": "021-34412618"
+  },
+  {
+    "Doctor Name": "Dr. Shahid Aslam",
+    "Specialization": "Pediatric Gastroenterologist",
+    "Clinic / Hospital": "Children Hospital",
+    "City": "Lahore",
+    "Phone Number": "042-99230901"
+  },
+  {
+    "Doctor Name": "Dr. Tariq Aziz",
+    "Specialization": "Pediatric Nephrologist",
+    "Clinic / Hospital": "Children Hospital",
+    "City": "Lahore",
+    "Phone Number": "042-99230901"
+  },
+  {
+    "Doctor Name": "Dr. Asad Abbas",
+    "Specialization": "Pediatric Urologist",
+    "Clinic / Hospital": "The Children's Hospital",
+    "City": "Lahore",
+    "Phone Number": "042-99230901"
+  },
+  {
+    "Doctor Name": "Dr. Ali Haider",
+    "Specialization": "Pediatric Oncologist",
+    "Clinic / Hospital": "The Children's Hospital",
+    "City": "Lahore",
+    "Phone Number": "042-99230901"
+  },
+  {
+    "Doctor Name": "Dr. Shazia Nawaz",
+    "Specialization": "Pediatric Cardiologist",
+    "Clinic / Hospital": "NICVD",
+    "City": "Karachi",
+    "Phone Number": "021-99201271"
+  },
+  {
+    "Doctor Name": "Dr. Adeel Shakoor",
+    "Specialization": "Pediatric Neurosurgeon",
+    "Clinic / Hospital": "The Children\u2019s Hospital",
+    "City": "Lahore",
+    "Phone Number": "042-99230901"
+  },
+  {
+    "Doctor Name": "Dr. Umar Khattab",
+    "Specialization": "Pediatric Orthopedic Surgeon",
+    "Clinic / Hospital": "Children Orthopedic Center",
+    "City": "Islamabad",
+    "Phone Number": "0333-7777880"
+  },
+  {
+    "Doctor Name": "Dr. Farah Naz",
+    "Specialization": "Pediatric Endocrinologist",
+    "Clinic / Hospital": "Akram Medical Complex",
+    "City": "Lahore",
+    "Phone Number": "042-35710400"
+  },
+  {
+    "Doctor Name": "Dr. Sana Ayub",
+    "Specialization": "Pediatric Diabetologist",
+    "Clinic / Hospital": "Fatima Memorial Hospital",
+    "City": "Lahore",
+    "Phone Number": "042-111555600"
+  },
+  {
+    "Doctor Name": "Dr. Waqas Ahmed",
+    "Specialization": "Pediatric Ophthalmologist",
+    "Clinic / Hospital": "LRBT Children Eye Unit",
+    "City": "Lahore",
+    "Phone Number": "042-35811500"
+  },
+  {
+    "Doctor Name": "Dr. Waqas Habib",
+    "Specialization": "Pediatric Nutritionist",
+    "Clinic / Hospital": "Children Nutrition Clinic",
+    "City": "Lahore",
+    "Phone Number": "042-35843224"
+  },
+  {
+    "Doctor Name": "Dr. Saba Rizwan",
+    "Specialization": "Periodontist",
+    "Clinic / Hospital": "Smile Studio Dental Practice",
+    "City": "Lahore",
+    "Phone Number": "0300-8426270"
+  },
+  {
+    "Doctor Name": "Dr. Ahsan Aziz",
+    "Specialization": "Prosthodontist",
+    "Clinic / Hospital": "Dental Experts",
+    "City": "Rawalpindi",
+    "Phone Number": "051-4455888"
+  },
+  {
+    "Doctor Name": "Dr. Ahsan Ali",
+    "Specialization": "Restorative Dentist",
+    "Clinic / Hospital": "Ali Dental Clinic",
+    "City": "Faisalabad",
+    "Phone Number": "041-8555777"
+  },
+  {
+    "Doctor Name": "Dr. Iqbal Afridi",
+    "Specialization": "Psychiatrist",
+    "Clinic / Hospital": "Jinnah Postgraduate Medical Centre",
+    "City": "Karachi",
+    "Phone Number": "021-99201300"
+  },
+  {
+    "Doctor Name": "Dr. Farzana Ashraf",
+    "Specialization": "Psychiatrist",
+    "Clinic / Hospital": "Mayo Hospital",
+    "City": "Lahore",
+    "Phone Number": "042-99211145"
+  },
+  {
+    "Doctor Name": "Dr. Bilal Aslam",
+    "Specialization": "Radiologist",
+    "Clinic / Hospital": "Doctors Hospital",
+    "City": "Lahore",
+    "Phone Number": "042-35302701"
+  },
+  {
+    "Doctor Name": "Dr. Zainab Asif",
+    "Specialization": "Reconstructive Surgeon",
+    "Clinic / Hospital": "South City Hospital",
+    "City": "Karachi",
+    "Phone Number": "021-35292707"
+  },
+  {
+    "Doctor Name": "Dr. Asma Nasim",
+    "Specialization": "Rheumatologist",
+    "Clinic / Hospital": "The Arthritis Care Centre",
+    "City": "Lahore",
+    "Phone Number": "042-35459118"
+  },
+  {
+    "Doctor Name": "Dr. Adeel Ur Rehman",
+    "Specialization": "Pediatric Rheumatologist",
+    "Clinic / Hospital": "Fatima Memorial Hospital",
+    "City": "Lahore",
+    "Phone Number": "042-111555600"
+  },
+  {
+    "Doctor Name": "Dr. Saima Ghaus",
+    "Specialization": "Speech Therapist",
+    "Clinic / Hospital": "AKUH Speech Therapy Department",
+    "City": "Karachi",
+    "Phone Number": "021-34930051"
+  },
+  {
+    "Doctor Name": "Dr. Yasmeen Fatima",
+    "Specialization": "Speech Therapist (Pediatric)",
+    "Clinic / Hospital": "Rising Sun Institute",
+    "City": "Lahore",
+    "Phone Number": "042-35457070"
+  },
+  {
+    "Doctor Name": "Dr. Adnan Ahmad",
+    "Specialization": "Spinal Surgeon",
+    "Clinic / Hospital": "Indus Hospital Karachi (IHHN)",
+    "City": "Karachi",
+    "Phone Number": "021-35112709"
+  },
+  {
+    "Doctor Name": "Dr. Nida Bukhari",
+    "Specialization": "Vaccine Specialist",
+    "Clinic / Hospital": "AKUH Immunization Centre",
+    "City": "Karachi",
+    "Phone Number": "021-34930051"
+  },
+  {
+    "Doctor Name": "Dr. Kamran Yousaf",
+    "Specialization": "Vascular Surgeon",
+    "Clinic / Hospital": "Shifa International Hospital",
+    "City": "Islamabad",
+    "Phone Number": "051-8463666"
+  },
+  {
+    "Doctor Name": "Dr. Waqas Habib",
+    "Specialization": "Pediatric Nutritionist",
+    "Clinic / Hospital": "Children Nutrition Clinic",
+    "City": "Lahore",
+    "Phone Number": "042-35843224"
+  },
+  {
+    "Doctor Name": "Dr. Aysha Ameen",
+    "Specialization": "Cardiac Surgeon",
+    "Clinic / Hospital": "Chughtai Medical Center",
+    "City": "Lahore",
+    "Phone Number": "042-111456789"
+  },
+  {
+    "Doctor Name": "Dr. Tariq Majeed",
+    "Specialization": "Neuromusculoskeletal Specialist",
+    "Clinic / Hospital": "CMH Lahore",
+    "City": "Lahore",
+    "Phone Number": "042-36605517"
+  },
+  {
+    "Doctor Name": "Dr. Yasmeen Fatima",
+    "Specialization": "Speech Therapist (Pediatric)",
+    "Clinic / Hospital": "Rising Sun Institute",
+    "City": "Lahore",
+    "Phone Number": "042-35457070"
+  },
+  {
+    "Doctor Name": "Dr. Shahid Noor",
+    "Specialization": "Spine Specialist",
+    "Clinic / Hospital": "Liaquat National Hospital",
+    "City": "Karachi",
+    "Phone Number": "021-34412618"
+  },
+  {
+    "Doctor Name": "Dr. Ammar Ahmed",
+    "Specialization": "Hand Surgeon",
+    "Clinic / Hospital": "Quaid-e-Azam International Hospital",
+    "City": "Islamabad",
+    "Phone Number": "051-8449100"
+  },
+  {
+    "Doctor Name": "Dr. Hania Kamil",
+    "Specialization": "Community Medicine Specialist",
+    "Clinic / Hospital": "Punjab Medical Centre",
+    "City": "Lahore",
+    "Phone Number": "042-37577662"
+  },
+  {
+    "Doctor Name": "Dr. Ahsan Aziz",
+    "Specialization": "Prosthodontist",
+    "Clinic / Hospital": "Dental Experts",
+    "City": "Rawalpindi",
+    "Phone Number": "051-4455888"
+  },
+  {
+    "Doctor Name": "Dr. Hassan Mujtaba",
+    "Specialization": "IVF / Fertility Consultant",
+    "Clinic / Hospital": "Life IVF Centre",
+    "City": "Faisalabad",
+    "Phone Number": "041-8720377"
+  }
+]

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -27,6 +28,31 @@ class _ReportScannerState extends State<ReportScanner> {
   bool _isLoading = false;
   final ImagePicker _picker = ImagePicker();
 
+  List<Map<String, dynamic>> medicines = [];
+  List<String> _extractedMedicines = [];
+  List<Map<String, dynamic>> _matchedMedicines = [];
+  List<Map<String, dynamic>> _alternativeMedicines = [];
+  String _formattedReport = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadMedicines();
+  }
+
+  Future<void> _loadMedicines() async {
+    try {
+      String data = await DefaultAssetBundle.of(
+        context,
+      ).loadString('lib/medicines.json');
+      setState(() {
+        medicines = List<Map<String, dynamic>>.from(json.decode(data));
+      });
+    } catch (e) {
+      _showError('Failed to load medicine database: $e');
+    }
+  }
+
   Future<void> _pickImage() async {
     try {
       final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
@@ -34,6 +60,10 @@ class _ReportScannerState extends State<ReportScanner> {
         setState(() {
           _selectedFile = File(image.path);
           _analysisResult = '';
+          _extractedMedicines = [];
+          _matchedMedicines = [];
+          _alternativeMedicines = [];
+          _formattedReport = '';
         });
       }
     } catch (e) {
@@ -50,72 +80,67 @@ class _ReportScannerState extends State<ReportScanner> {
     setState(() {
       _isLoading = true;
       _analysisResult = '';
+      _extractedMedicines = [];
+      _matchedMedicines = [];
+      _alternativeMedicines = [];
+      _formattedReport = '';
     });
 
     try {
       const apiBase = "http://203.6.209.25:5010";
-      
+
       const prompt = """
-Please analyze this medical report thoroughly and provide a CLEAR, PATIENT-FRIENDLY summary with the following structure:
+You are a compassionate medical-report analysis assistant. Parse the following clinical document and extract its information with sensitivity and accuracy. Return the response formatted exactly as plain text with section headings and simple lines—do not use asterisks, hashtags, or any special characters. Include a brief sentiment analysis at the end.
 
-**Short Summary:**
-- Provide a 2-3 sentence overview of the report's key points
+Patient Information:
+Name: [patient name here]
+Age: [age if available]
+Gender: [gender if available]
 
-**Patient & Doctor Information:**
-- Bold the patient name and doctor name if present
-- Mention patient age/sex if visible
+Doctor Information:
+Name: [doctor name here]
+Specialty: [specialty if available]
 
-**Report Type:**
-- Identify the type of medical report
+Report Details:
+Date: [report date here]
+Diagnosis: [primary diagnosis if available]
 
-**Key Findings:**
-- List 3-5 most important findings
-- Highlight abnormal values
-- Use bullet points with simple explanations
+Medications:
+Medication 1: [Corrected Medication Name 1]
+Medication 2: [Corrected Medication Name 2]
+Medication 3: [Corrected Medication Name 3]
 
-**Medications Identified:**
-- List all medicine names clearly
-- Format as: "• Medicine Name (Dosage if available)"
-- Group similar medications
+Report Summary:
+[Provide a concise three to four sentence summary of the report’s key findings in clear, patient-friendly language]
 
-**Clinical Interpretation:**
-- Explain what the findings mean in simple terms
-- Use analogies where helpful
-- Highlight urgent concerns
+Sentiment Analysis:
+Overall Tone of Report: [e.g. reassuring, urgent, cautious]
+Estimated Patient Emotional Context: [e.g. concerned, hopeful, anxious]
 
-**Recommended Actions:**
-- Suggest follow-up steps
-- Mention if specialist consultation is needed
-- Include lifestyle recommendations
-
-**Important Notes:**
-- Add disclaimers about limitations
-- Remind to consult with their doctor
-- Include emergency warnings if needed
-
-Format with clear section headings, proper spacing, and plain language. Remove any symbols like *, **, nn, description, or other formatting artifacts.
+Important Notes:
+1. Verify medication names against a trusted medical lexicon (for example, RxNorm) and correct any spelling errors.
+2. List only the medication names under “Medications”—do not include any dosage, strength, or frequency.
+3. If a field cannot be found, leave its value blank.
+4. Do not mix up fields—keep each piece of data under its proper heading.
+5. Do not add any extra commentary, sections, or formatting beyond what is requested.
+6. Preserve these exact headings and plain-text formatting.
 """;
 
-      var request = http.MultipartRequest(
-        'POST',
-        Uri.parse('$apiBase/vision'),
+      var request = http.MultipartRequest('POST', Uri.parse('$apiBase/vision'));
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          'image',
+          _selectedFile!.path,
+          contentType: MediaType('image', 'jpeg'),
+        ),
       );
-
-      request.files.add(await http.MultipartFile.fromPath(
-        'image',
-        _selectedFile!.path,
-        contentType: MediaType('image', 'jpeg'),
-      ));
-
       request.fields['prompt'] = prompt;
 
       var response = await request.send();
       var responseData = await response.stream.bytesToString();
 
       if (response.statusCode == 200) {
-        setState(() {
-          _analysisResult = _formatResponse(responseData);
-        });
+        _processResponse(responseData);
       } else {
         _showError('Analysis failed: ${response.reasonPhrase}');
       }
@@ -128,51 +153,147 @@ Format with clear section headings, proper spacing, and plain language. Remove a
     }
   }
 
-  String _formatResponse(String response) {
-    // Clean up the response formatting
-    String cleaned = response
-        .replaceAll('*', '')
-        .replaceAll('\\', '')
-        .replaceAll('{', '')
-        .replaceAll('}', '')
-        .replaceAll('**', '')
-        .replaceAll('nn', '')
-        .replaceAll('""', '')
-        .replaceAll('description:', '')
-        .replaceAll('description', '')
-        .replaceAll('•', '•');
+  void _processResponse(String response) {
+    try {
+      // Clean up the response by removing markdown formatting
+      String cleanedResponse = response
+          .replaceAll('*', '')
+          .replaceAll('#', '')
+          .replaceAll('**', '')
+          .replaceAll('\\n', '\n');
 
-    // Enhance patient and doctor names
-    cleaned = cleaned.replaceAllMapped(
-      RegExp(r'(Patient Name:|Doctor Name:)(.*)'),
-      (match) => '${match.group(1)} **${match.group(2)?.trim()}**',
-    );
+      // Extract medications section
+      final medsSection = _extractSection(
+        cleanedResponse,
+        'Medications:',
+        'Report Summary:',
+      );
+      print('medsection: $cleanedResponse');
+      if (medsSection != null) {
+        _extractedMedicines =
+            medsSection
+                .split('\n')
+                .where(
+                  (line) =>
+                      line.trim().isNotEmpty &&
+                      !line.trim().startsWith('Medication'),
+                )
+                .map((line) => line.trim())
+                .toList();
+      }
 
-    // Add spacing between sections
-    final sections = [
-      'Short Summary:',
-      'Patient & Doctor Information:',
-      'Report Type:',
-      'Key Findings:',
-      'Medications Identified:',
-      'Clinical Interpretation:',
-      'Recommended Actions:',
-      'Important Notes:'
-    ];
+      // Match medicines with database
+      _matchMedicines();
 
-    for (var section in sections) {
-      cleaned = cleaned.replaceAll('$section', '\n\n$section\n');
+      // Format the report for display
+      setState(() {
+        _formattedReport = _formatReport(cleanedResponse);
+        _analysisResult =
+            'Found ${_extractedMedicines.length} medications in the report';
+      });
+    } catch (e) {
+      _showError('Error processing response: $e');
+    }
+  }
+
+  String _formatReport(String report) {
+    // Split into sections
+    List<String> sections = report.split('\n\n');
+
+    // Format each section
+    String formatted = '';
+    for (String section in sections) {
+      if (section.startsWith('Patient Information:')) {
+        formatted += 'PATIENT INFORMATION\n';
+        formatted +=
+            section.replaceFirst('Patient Information:', '').trim() + '\n\n';
+      } else if (section.startsWith('Doctor Information:')) {
+        formatted += 'DOCTOR INFORMATION\n';
+        formatted +=
+            section.replaceFirst('Doctor Information:', '').trim() + '\n\n';
+      } else if (section.startsWith('Report Details:')) {
+        formatted += 'REPORT DETAILS\n';
+        formatted +=
+            section.replaceFirst('Report Details:', '').trim() + '\n\n';
+      } else if (section.startsWith('Medications:')) {
+        formatted += 'PRESCRIBED MEDICATIONS\n';
+        formatted += section.replaceFirst('Medications:', '').trim() + '\n\n';
+      } else if (section.startsWith('Report Summary:')) {
+        formatted += 'REPORT SUMMARY\n';
+        formatted +=
+            section.replaceFirst('Report Summary:', '').trim() + '\n\n';
+      } else if (section.startsWith('Sentiment Analysis:')) {
+        formatted += 'SENTIMENT ANALYSIS\n';
+        formatted +=
+            section.replaceFirst('Sentiment Analysis:', '').trim() + '\n\n';
+      } else {
+        formatted += section + '\n\n';
+      }
     }
 
-    // Capitalize the first letter
-    if (cleaned.isNotEmpty) {
-      cleaned = cleaned[0].toUpperCase() + cleaned.substring(1);
+    return formatted.trim();
+  }
+
+  String? _extractSection(
+    String text,
+    String startDelimiter,
+    String endDelimiter,
+  ) {
+    final startIndex = text.indexOf(startDelimiter);
+    if (startIndex == -1) return null;
+
+    final endIndex =
+        endDelimiter.isNotEmpty
+            ? text.indexOf(endDelimiter, startIndex + startDelimiter.length)
+            : text.length;
+
+    if (endIndex == -1) return null;
+
+    return text.substring(startIndex + startDelimiter.length, endIndex).trim();
+  }
+
+  void _matchMedicines() {
+    _matchedMedicines = [];
+    _alternativeMedicines = [];
+
+    for (var med in _extractedMedicines) {
+      // Extract just the medicine name (without dosage)
+      String medName = med.split('(')[0].trim();
+      print('medName: $medName');
+      // Find exact matches
+      var exactMatch = medicines.firstWhere(
+        (m) => _normalizeMedicineName(
+          m['Medicine Name'],
+        ).contains(_normalizeMedicineName(medName)),
+        orElse: () => {},
+      );
+
+      if (exactMatch.isNotEmpty) {
+        _matchedMedicines.add(exactMatch);
+
+        // Find medicines with similar composition (alternatives)
+        final composition = exactMatch['Composition'];
+        if (composition != null) {
+          final alternatives =
+              medicines
+                  .where(
+                    (m) =>
+                        m['Composition'] == composition &&
+                        m['Medicine Name'] != exactMatch['Medicine Name'],
+                  )
+                  .toList();
+          _alternativeMedicines.addAll(alternatives);
+        }
+      }
     }
 
-    // Remove excessive empty lines
-    cleaned = cleaned.replaceAll(RegExp(r'\n{3,}'), '\n\n');
+    // Remove duplicates
+    _matchedMedicines = _matchedMedicines.toSet().toList();
+    _alternativeMedicines = _alternativeMedicines.toSet().toList();
+  }
 
-    return cleaned.trim();
+  String _normalizeMedicineName(String name) {
+    return name.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
   }
 
   void _showError(String message) {
@@ -181,163 +302,145 @@ Format with clear section headings, proper spacing, and plain language. Remove a
         content: Text(message),
         backgroundColor: Colors.red,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
-    ));
+    );
   }
 
   void _clearSelection() {
     setState(() {
       _selectedFile = null;
       _analysisResult = '';
+      _extractedMedicines = [];
+      _matchedMedicines = [];
+      _alternativeMedicines = [];
+      _formattedReport = '';
     });
   }
 
-  Widget _buildSectionHeader(String text) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 16, bottom: 8),
-      child: Text(
-        text,
-        style: TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.bold,
-          color: primaryDark,
-        ),
-      ),
-    );
-  }
+  Widget _buildReportSection(String title, String content) {
+    if (content.isEmpty) return Container();
 
-  Widget _buildRichText(String text) {
-    final List<TextSpan> spans = [];
-    final lines = text.split('\n');
-    
-    for (var line in lines) {
-      if (line.trim().isEmpty) continue;
-      
-      // Bold patient and doctor names
-      if (line.contains('Patient Name:') || line.contains('Doctor Name:')) {
-        final parts = line.split(':');
-        if (parts.length > 1) {
-          spans.add(TextSpan(
-            text: '${parts[0]}: ',
-            style: TextStyle(
-              color: primaryDark,
-              fontWeight: FontWeight.bold,
-              fontSize: 14,
-            ),
-          ));
-          spans.add(TextSpan(
-            text: parts[1].trim(),
-            style: TextStyle(
-              color: primaryDark,
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-            ),
-          ));
-        } else {
-          spans.add(TextSpan(
-            text: line,
-            style: TextStyle(
-              color: primaryDark,
-              fontSize: 14,
-            ),
-          ));
-        }
-      } 
-      // Style medications differently
-      else if (line.contains('•') && 
-              (line.contains('Medications Identified:') || 
-               line.contains('Suggested Medications:'))) {
-        spans.add(TextSpan(
-          text: line,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
           style: TextStyle(
-            color: secondaryDark,
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-          ),
-        ));
-      }
-      // Highlight short summary
-      else if (line.contains('Short Summary:')) {
-        spans.add(TextSpan(
-          text: line.replaceFirst('Short Summary:', ''),
-          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
             color: primaryDark,
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
           ),
-        ));
-      }
-      else {
-        spans.add(TextSpan(
-          text: line,
-          style: TextStyle(
-            color: Colors.black87,
-            fontSize: 14,
-          ),
-        ));
-      }
-      spans.add(const TextSpan(text: '\n'));
-    }
-    
-    return RichText(
-      text: TextSpan(
-        children: spans,
-        style: const TextStyle(
-          height: 1.5,
         ),
-      ),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.grey[50],
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.grey[200]!),
+          ),
+          child: Text(
+            content,
+            style: TextStyle(fontSize: 14, color: Colors.black87, height: 1.5),
+          ),
+        ),
+        const SizedBox(height: 20),
+      ],
     );
   }
 
-  Widget _buildAnalysisResult() {
-    if (_analysisResult.isEmpty) return Container();
-
-    List<Widget> sections = [];
-    List<String> parts = _analysisResult.split('\n\n');
-
-    for (String part in parts) {
-      if (part.contains('Short Summary:')) {
-        sections.add(_buildSectionHeader('Quick Overview'));
-        sections.add(_buildRichText(part.replaceFirst('Short Summary:', '').trim()));
-      }
-      else if (part.contains('Patient & Doctor Information:')) {
-        sections.add(_buildSectionHeader('Patient & Doctor Information'));
-        sections.add(_buildRichText(part.replaceFirst('Patient & Doctor Information:', '').trim()));
-      } 
-      else if (part.contains('Report Type:')) {
-        sections.add(_buildSectionHeader('Report Type'));
-        sections.add(_buildRichText(part.replaceFirst('Report Type:', '').trim()));
-      }
-      else if (part.contains('Key Findings:')) {
-        sections.add(_buildSectionHeader('Key Findings'));
-        sections.add(_buildRichText(part.replaceFirst('Key Findings:', '').trim()));
-      }
-      else if (part.contains('Medications Identified:')) {
-        sections.add(_buildSectionHeader('Medications Identified'));
-        sections.add(_buildRichText(part.replaceFirst('Medications Identified:', '').trim()));
-      }
-      else if (part.contains('Clinical Interpretation:')) {
-        sections.add(_buildSectionHeader('Clinical Interpretation'));
-        sections.add(_buildRichText(part.replaceFirst('Clinical Interpretation:', '').trim()));
-      }
-      else if (part.contains('Recommended Actions:')) {
-        sections.add(_buildSectionHeader('Recommended Actions'));
-        sections.add(_buildRichText(part.replaceFirst('Recommended Actions:', '').trim()));
-      }
-      else if (part.contains('Important Notes:')) {
-        sections.add(_buildSectionHeader('Important Notes'));
-        sections.add(_buildRichText(part.replaceFirst('Important Notes:', '').trim()));
-      }
-      else {
-        sections.add(_buildRichText(part));
-      }
+  Widget _buildMedicineAnalysis() {
+    if (_matchedMedicines.isEmpty && _alternativeMedicines.isEmpty) {
+      return Container();
     }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: sections,
+      children: [
+        Text(
+          'MEDICINE ANALYSIS',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: primaryDark,
+          ),
+        ),
+        const SizedBox(height: 10),
+        if (_matchedMedicines.isNotEmpty) ...[
+          Text(
+            'Prescribed Medicines:',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: secondaryDark,
+            ),
+          ),
+          const SizedBox(height: 8),
+          ..._matchedMedicines.map(
+            (medicine) => _buildMedicineCard(medicine, false),
+          ),
+          const SizedBox(height: 20),
+        ],
+        if (_alternativeMedicines.isNotEmpty) ...[
+          Text(
+            'Alternative Medicines (Same Composition):',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: secondaryDark,
+            ),
+          ),
+          const SizedBox(height: 8),
+          ..._alternativeMedicines.map(
+            (medicine) => _buildMedicineCard(medicine, true),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            'Note: Alternatives have the same active ingredients but may differ in brand or price',
+            style: TextStyle(
+              fontSize: 12,
+              color: secondary,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildMedicineCard(Map<String, dynamic> medicine, bool isAlternative) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 10),
+      color: isAlternative ? accentLight.withOpacity(0.2) : Colors.white,
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              medicine['Medicine Name'] ?? 'Unknown',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: isAlternative ? primary : primaryDark,
+              ),
+            ),
+            const SizedBox(height: 5),
+            if (medicine['Composition'] != null)
+              Text(
+                'Composition: ${medicine['Composition']}',
+                style: TextStyle(fontSize: 14, color: Colors.black87),
+              ),
+            if (medicine['Dosage Form'] != null)
+              Text(
+                'Form: ${medicine['Dosage Form']}',
+                style: TextStyle(fontSize: 14, color: Colors.black87),
+              ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -353,7 +456,10 @@ Format with clear section headings, proper spacing, and plain language. Remove a
       child: Scaffold(
         backgroundColor: Colors.white,
         appBar: AppBar(
-          title: const Text('Medical Report Scanner',style: TextStyle(color: Colors.white),),
+          title: const Text(
+            'Medicine Report Analyzer',
+            style: TextStyle(color: Colors.white),
+          ),
           backgroundColor: primary,
           elevation: 0,
           centerTitle: true,
@@ -365,33 +471,24 @@ Format with clear section headings, proper spacing, and plain language. Remove a
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(vertical: 20),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 20,
+                  horizontal: 15,
+                ),
                 decoration: BoxDecoration(
                   color: accentLight.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(15),
                 ),
                 child: Column(
                   children: [
-                    Icon(Icons.medical_services, size: 50, color: primary),
+                    Icon(Icons.medication_liquid, size: 50, color: primary),
                     const SizedBox(height: 10),
                     Text(
-                      'Medical Report Assistant',
+                      'Medicine Analysis Tool',
                       style: TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
                         color: primaryDark,
-                      ),
-                    ),
-                    const SizedBox(height: 5),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Text(
-                        'Upload your medical reports to get a clear, easy-to-understand explanation',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: secondary,
-                        ),
                       ),
                     ),
                   ],
@@ -428,27 +525,23 @@ Format with clear section headings, proper spacing, and plain language. Remove a
                               border: Border.all(
                                 color: primaryLight,
                                 width: 2,
+                                style: BorderStyle.solid,
                               ),
                             ),
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.cloud_upload, 
-                                    size: 50, color: primaryLight),
+                                Icon(
+                                  Icons.cloud_upload,
+                                  size: 50,
+                                  color: primaryLight,
+                                ),
                                 const SizedBox(height: 10),
                                 Text(
                                   'Tap to upload report',
                                   style: TextStyle(
                                     color: secondary,
                                     fontSize: 16,
-                                  ),
-                                ),
-                                const SizedBox(height: 5),
-                                Text(
-                                  '(Supports JPG, PNG)',
-                                  style: TextStyle(
-                                    color: Colors.grey,
-                                    fontSize: 12,
                                   ),
                                 ),
                               ],
@@ -481,8 +574,6 @@ Format with clear section headings, proper spacing, and plain language. Remove a
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(10),
                                     ),
-                                    padding: EdgeInsets.symmetric(
-                                        horizontal: 20, vertical: 12),
                                   ),
                                 ),
                                 ElevatedButton.icon(
@@ -495,8 +586,6 @@ Format with clear section headings, proper spacing, and plain language. Remove a
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(10),
                                     ),
-                                    padding: EdgeInsets.symmetric(
-                                        horizontal: 20, vertical: 12),
                                   ),
                                 ),
                               ],
@@ -511,13 +600,10 @@ Format with clear section headings, proper spacing, and plain language. Remove a
 
               ElevatedButton.icon(
                 onPressed: _analyzeReport,
-                icon: Icon(Icons.analytics, size: 24),
+                icon: Icon(Icons.search, size: 24),
                 label: Text(
-                  'ANALYZE REPORT',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  'ANALYZE MEDICINES',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: accent,
@@ -526,85 +612,64 @@ Format with clear section headings, proper spacing, and plain language. Remove a
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  elevation: 3,
-                  shadowColor: accent.withOpacity(0.5),
                 ),
               ),
               const SizedBox(height: 30),
 
-              if (_analysisResult.isNotEmpty)
-                Card(
-                  elevation: 3,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(15),
+              if (_analysisResult.isNotEmpty) ...[
+                Text(
+                  _analysisResult,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: primaryDark,
+                    fontWeight: FontWeight.bold,
                   ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(Icons.insights, color: primary),
-                            const SizedBox(width: 10),
-                            Text(
-                              'Report Summary',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: primaryDark,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 15),
-                        Container(
-                          padding: const EdgeInsets.all(15),
-                          decoration: BoxDecoration(
-                            color: Colors.grey[50],
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: accentLight),
-                          ),
-                          child: SingleChildScrollView(
-                            child: _buildAnalysisResult(),
-                          ),
-                        ),
-                        const SizedBox(height: 15),
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.orange[50],
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.orange[200]!),
-                          ),
-                          child: Text(
-                            'Important: This analysis is generated by AI and should not replace professional medical advice. Always consult with your doctor about your health concerns.',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.orange[800],
-                              height: 1.4,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                      ],
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 20),
+
+                // Display the formatted report
+                if (_formattedReport.isNotEmpty) ...[
+                  _buildReportSection('REPORT ANALYSIS', _formattedReport),
+                  const SizedBox(height: 20),
+                ],
+
+                // Display medicine analysis
+                _buildMedicineAnalysis(),
+                const SizedBox(height: 20),
+
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.orange[50],
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.orange[200]!),
+                  ),
+                  child: Text(
+                    'Important: Always consult with your doctor before making any changes to your prescribed medications.',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.orange[800],
+                      height: 1.4,
                     ),
+                    textAlign: TextAlign.center,
                   ),
                 ),
+              ],
               const SizedBox(height: 20),
             ],
           ),
         ),
-        floatingActionButton: _selectedFile != null && _analysisResult.isEmpty
-            ? FloatingActionButton.extended(
-                onPressed: _analyzeReport,
-                icon: Icon(Icons.analytics),
-                label: Text('Analyze'),
-                backgroundColor: accent,
-                foregroundColor: Colors.white,
-                elevation: 3,
-              )
-            : null,
+        floatingActionButton:
+            _selectedFile != null && _analysisResult.isEmpty
+                ? FloatingActionButton.extended(
+                  onPressed: _analyzeReport,
+                  icon: Icon(Icons.search),
+                  label: Text('Analyze'),
+                  backgroundColor: accent,
+                  foregroundColor: Colors.white,
+                )
+                : null,
       ),
     );
   }
