@@ -98,8 +98,7 @@ flutter:
     - assets/images/
     - assets/svg/
     - assets/icon/
-    - lib/medicines.json
-    - lib/doctors.json
+    - assets/json/
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see

@@ -26,7 +26,7 @@ Future<void> _showNotification(RemoteMessage message) async {
             'This channel is used for medicine reminder notifications.',
         importance: Importance.max,
         priority: Priority.high,
-        icon: '@drawable/ic_stat_notify', // 👈 Add this line
+        icon: 'ic_stat_notify', // 👈 Add this line
       );
 
   const NotificationDetails platformChannelSpecifics = NotificationDetails(

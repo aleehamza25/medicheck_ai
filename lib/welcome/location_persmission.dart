@@ -15,7 +15,8 @@ class _LocationPermissionScreenState extends State<LocationPermissionScreen>
     with SingleTickerProviderStateMixin {
   bool _isLocationServiceEnabled = false;
   bool _isPermissionGranted = false;
-  bool _isLocationLoading = false;
+  bool _isLoading = true;
+  bool _isRequestingPermission = false;
 
   // Color Scheme matching your splash screen
   final Color primaryDark = const Color(0xFF03045E);
@@ -48,7 +49,7 @@ class _LocationPermissionScreenState extends State<LocationPermissionScreen>
     );
 
     _animationController.forward();
-    _checkLocationPermission();
+    _initLocationCheck();
   }
 
   @override
@@ -57,35 +58,70 @@ class _LocationPermissionScreenState extends State<LocationPermissionScreen>
     super.dispose();
   }
 
-  Future<void> _checkLocationPermission() async {
-    setState(() {
-      _isLocationLoading = true;
-    });
-
+  Future<void> _initLocationCheck() async {
+    // First check if location services are enabled
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    
     if (!serviceEnabled) {
       setState(() {
         _isLocationServiceEnabled = false;
-        _isLocationLoading = false;
+        _isLoading = false;
       });
       return;
     }
 
+    // Then check permission status
     LocationPermission permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-    }
-
+    
     setState(() {
-      _isLocationLoading = false;
-      _isPermissionGranted =
-          permission == LocationPermission.whileInUse ||
-          permission == LocationPermission.always;
+      _isPermissionGranted = permission == LocationPermission.whileInUse || 
+                            permission == LocationPermission.always;
+      _isLoading = false;
+    });
+
+    // If permission already granted, proceed after delay
+    if (_isPermissionGranted) {
+      _proceedAfterPermission();
+    }
+  }
+
+  Future<void> _requestLocationPermission() async {
+    setState(() {
+      _isRequestingPermission = true;
+    });
+
+    LocationPermission permission = await Geolocator.requestPermission();
+    
+    setState(() {
+      _isPermissionGranted = permission == LocationPermission.whileInUse || 
+                           permission == LocationPermission.always;
+      _isRequestingPermission = false;
     });
 
     if (_isPermissionGranted) {
-      await Future.delayed(const Duration(milliseconds: 3000));
+      _proceedAfterPermission();
+    }
+  }
+
+  void _proceedAfterPermission() {
+    // Wait 2 seconds then navigate
+    Future.delayed(const Duration(seconds: 2), () {
       _checkAuthState();
+    });
+  }
+
+  Future<void> _checkAuthState() async {
+    final auth = FirebaseAuth.instance;
+    final user = auth.currentUser;
+
+    if (user != null) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => DashboardScreen()),
+      );
+    } else {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => LoginScreen()),
+      );
     }
   }
 
@@ -107,100 +143,84 @@ class _LocationPermissionScreenState extends State<LocationPermissionScreen>
             child: SafeArea(
               child: Padding(
                 padding: const EdgeInsets.all(24.0),
-                child:
-                    _isLocationLoading
-                        ? _buildLoadingUI()
-                        : FadeTransition(
-                          opacity: _fadeInAnimation,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const SizedBox(height: 20),
-                              ScaleTransition(
-                                scale: _scaleAnimation,
-                                child: Text(
-                                  'Location Access',
-                                  style: TextStyle(
-                                    fontSize: 32,
-                                    fontWeight: FontWeight.w800,
-                                    color: Colors.white,
-                                    letterSpacing: 1.1,
-                                    shadows: [
-                                      Shadow(
-                                        color: primaryDark.withOpacity(0.4),
-                                        blurRadius: 8,
-                                        offset: const Offset(2, 2),
-                                      ),
-                                    ],
-                                  ),
-                                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 20),
+                    ScaleTransition(
+                      scale: _scaleAnimation,
+                      child: Text(
+                        'Location Access',
+                        style: TextStyle(
+                          fontSize: 32,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                          letterSpacing: 1.1,
+                          shadows: [
+                            Shadow(
+                              color: primaryDark.withOpacity(0.4),
+                              blurRadius: 8,
+                              offset: const Offset(2, 2),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'We need your location to provide personalized health recommendations',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.white.withOpacity(0.9),
+                      ),
+                    ),
+                    const SizedBox(height: 40),
+                    Center(
+                      child: ScaleTransition(
+                        scale: _scaleAnimation,
+                        child: Container(
+                          padding: const EdgeInsets.all(25),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.15),
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: primaryDark.withOpacity(0.3),
+                                blurRadius: 30,
+                                spreadRadius: 5,
                               ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'We need your location to provide personalized health recommendations',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: Colors.white.withOpacity(0.9),
-                                ),
-                              ),
-                              SizedBox(height: 40),
-                              Center(
-                                child: ScaleTransition(
-                                  scale: _scaleAnimation,
-                                  child: Container(
-                                    padding: const EdgeInsets.all(25),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white.withOpacity(0.15),
-                                      shape: BoxShape.circle,
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: primaryDark.withOpacity(0.3),
-                                          blurRadius: 30,
-                                          spreadRadius: 5,
-                                        ),
-                                      ],
-                                    ),
-                                    child: SvgPicture.asset(
-                                      'assets/svg/location.svg',
-                                      width: 100,
-                                      height: 100,
-                                      color: Colors.white.withOpacity(0.95),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 40),
-                              if (!_isPermissionGranted) ...[
-                                _buildPermissionDeniedUI(),
-                              ] else ...[
-                                _buildPermissionGrantedUI(),
-                              ],
-                              const Spacer(),
-                              if (!_isPermissionGranted)
-                                _buildActionButton(
-                                  text: 'Allow Location Access',
-                                  onPressed: () async {
-                                    LocationPermission permission =
-                                        await Geolocator.requestPermission();
-                                    if (permission ==
-                                            LocationPermission.whileInUse ||
-                                        permission ==
-                                            LocationPermission.always) {
-                                      setState(() {
-                                        _isPermissionGranted = true;
-                                      });
-                                      _checkAuthState();
-                                    }
-                                  },
-                                ),
-                              if (_isPermissionGranted)
-                                _buildActionButton(
-                                  text: 'Continue',
-                                  onPressed: _checkAuthState,
-                                ),
                             ],
                           ),
+                          child: SvgPicture.asset(
+                            'assets/svg/location.svg',
+                            width: 100,
+                            height: 100,
+                            color: Colors.white.withOpacity(0.95),
+                          ),
                         ),
+                      ),
+                    ),
+                    const SizedBox(height: 40),
+                    Expanded(
+                      child: FadeTransition(
+                        opacity: _fadeInAnimation,
+                        child: _isLoading
+                            ? _buildLoadingUI()
+                            : _isPermissionGranted
+                                ? _buildPermissionGrantedUI()
+                                : _buildPermissionDeniedUI(),
+                      ),
+                    ),
+                    if (!_isPermissionGranted && !_isLoading)
+                      _buildActionButton(
+                        isLoading: _isRequestingPermission,
+                        text: 'Allow Location Access',
+                        onPressed: _requestLocationPermission,
+                      ),
+                    if (_isPermissionGranted && !_isLoading)
+                      const SizedBox(height: 20), // Spacer when permission granted
+                  ],
+                ),
               ),
             ),
           );
@@ -214,24 +234,40 @@ class _LocationPermissionScreenState extends State<LocationPermissionScreen>
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Container(
-            padding: const EdgeInsets.all(25),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.15),
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: primaryDark.withOpacity(0.3),
-                  blurRadius: 30,
-                  spreadRadius: 5,
+          SizedBox(
+            width: 120,
+            height: 120,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(25),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.15),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: primaryDark.withOpacity(0.3),
+                        blurRadius: 30,
+                        spreadRadius: 5,
+                      ),
+                    ],
+                  ),
+                  child: SvgPicture.asset(
+                    'assets/svg/location.svg',
+                    width: 60,
+                    height: 60,
+                    color: Colors.white.withOpacity(0.95),
+                  ),
+                ),
+                CircularProgressIndicator(
+                  strokeWidth: 3,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    Colors.white.withOpacity(0.8),
+                  ),
+                  backgroundColor: Colors.white.withOpacity(0.2),
                 ),
               ],
-            ),
-            child: SvgPicture.asset(
-              'assets/svg/location.svg',
-              width: 80,
-              height: 80,
-              color: Colors.white.withOpacity(0.95),
             ),
           ),
           const SizedBox(height: 30),
@@ -242,26 +278,13 @@ class _LocationPermissionScreenState extends State<LocationPermissionScreen>
               color: Colors.white.withOpacity(0.9),
             ),
           ),
-          const SizedBox(height: 30),
-          SizedBox(
-            width: 40,
-            height: 40,
-            child: CircularProgressIndicator(
-              strokeWidth: 3,
-              valueColor: AlwaysStoppedAnimation<Color>(
-                Colors.white.withOpacity(0.8),
-              ),
-              backgroundColor: Colors.white.withOpacity(0.2),
-            ),
-          ),
         ],
       ),
     );
   }
 
   Widget _buildPermissionDeniedUI() {
-    return ScaleTransition(
-      scale: _scaleAnimation,
+    return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -316,35 +339,53 @@ class _LocationPermissionScreenState extends State<LocationPermissionScreen>
   }
 
   Widget _buildPermissionGrantedUI() {
-    return ScaleTransition(
-      scale: _scaleAnimation,
+    return Center(
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: accent.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: accent.withOpacity(0.4), width: 1),
-            ),
-            child: Row(
+          SizedBox(
+            width: 120,
+            height: 120,
+            child: Stack(
+              alignment: Alignment.center,
               children: [
-                Icon(Icons.check_circle, color: highlight),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'Location access granted! You can change this anytime in settings.',
-                    style: TextStyle(color: Colors.white.withOpacity(0.9)),
+                Container(
+                  padding: const EdgeInsets.all(25),
+                  decoration: BoxDecoration(
+                    color: accent.withOpacity(0.2),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: primaryDark.withOpacity(0.3),
+                        blurRadius: 30,
+                        spreadRadius: 5,
+                      ),
+                    ],
                   ),
+                  child: SvgPicture.asset(
+                    'assets/svg/location.svg',
+                    width: 60,
+                    height: 60,
+                    color: Colors.white.withOpacity(0.95),
+                  ),
+                ),
+                Icon(Icons.check_circle, 
+                  color: highlight, 
+                  size: 40,
+                ),
+                CircularProgressIndicator(
+                  strokeWidth: 3,
+                  valueColor: AlwaysStoppedAnimation<Color>(highlight),
+                  backgroundColor: Colors.transparent,
                 ),
               ],
             ),
           ),
           const SizedBox(height: 30),
           Text(
-            'Ready to get started with personalized health recommendations!',
+            'Location access granted!\nTaking you to the app...',
             style: TextStyle(
-              fontSize: 16,
+              fontSize: 18,
               color: Colors.white.withOpacity(0.9),
             ),
             textAlign: TextAlign.center,
@@ -365,8 +406,7 @@ class _LocationPermissionScreenState extends State<LocationPermissionScreen>
           Expanded(
             child: Text(
               text,
-              style: TextStyle(color: Colors.white.withOpacity(0.9)),
-            ),
+              style: TextStyle(color: Colors.white.withOpacity(0.9))),
           ),
         ],
       ),
@@ -376,15 +416,16 @@ class _LocationPermissionScreenState extends State<LocationPermissionScreen>
   Widget _buildActionButton({
     required String text,
     required VoidCallback onPressed,
+    bool isLoading = false,
   }) {
     return FadeTransition(
       opacity: _fadeInAnimation,
       child: SizedBox(
         width: double.infinity,
         child: ElevatedButton(
-          onPressed: onPressed,
+          onPressed: isLoading ? null : onPressed,
           style: ElevatedButton.styleFrom(
-            backgroundColor: accent,
+            backgroundColor: isLoading ? accent.withOpacity(0.7) : accent,
             foregroundColor: primaryDark,
             padding: const EdgeInsets.symmetric(vertical: 16),
             shape: RoundedRectangleBorder(
@@ -393,32 +434,26 @@ class _LocationPermissionScreenState extends State<LocationPermissionScreen>
             elevation: 4,
             shadowColor: primaryDark.withOpacity(0.3),
           ),
-          child: Text(
-            text,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 0.8,
-              color: Colors.white,
-            ),
-          ),
+          child: isLoading
+              ? SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                )
+              : Text(
+                  text,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.8,
+                    color: Colors.white,
+                  ),
+                ),
         ),
       ),
     );
-  }
-
-  Future<void> _checkAuthState() async {
-    final auth = FirebaseAuth.instance;
-    final user = auth.currentUser;
-
-    if (user != null) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => DashboardScreen()),
-      );
-    } else {
-      Navigator.of(
-        context,
-      ).pushReplacement(MaterialPageRoute(builder: (context) => LoginScreen()));
-    }
   }
 }

@@ -44,7 +44,7 @@ class _ReportScannerState extends State<ReportScanner> {
     try {
       String data = await DefaultAssetBundle.of(
         context,
-      ).loadString('lib/medicines.json');
+      ).loadString('assets/json/medicines.json');
       setState(() {
         medicines = List<Map<String, dynamic>>.from(json.decode(data));
       });

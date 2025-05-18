@@ -285,12 +285,12 @@ class _SymptomInputScreenState extends State<SymptomInputScreen> {
   Future<void> _loadJsonData() async {
     try {
       // Load medicines data
-      final medicinesString = await rootBundle.loadString('lib/medicines.json');
+      final medicinesString = await rootBundle.loadString('assets/json/medicines.json');
       final medicinesJson = json.decode(medicinesString) as List;
       _allMedicines = medicinesJson.cast<Map<String, dynamic>>();
 
       // Load doctors data
-      final doctorsString = await rootBundle.loadString('lib/doctors.json');
+      final doctorsString = await rootBundle.loadString('assets/json/doctors.json');
       final doctorsJson = json.decode(doctorsString) as List;
       _allDoctors = doctorsJson.cast<Map<String, dynamic>>();
     } catch (e) {
