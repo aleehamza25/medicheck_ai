@@ -111,7 +111,7 @@ Medication 2: [Corrected Medication Name 2]
 Medication 3: [Corrected Medication Name 3]
 
 Report Summary:
-[Provide a concise three to four sentence summary of the report’s key findings in clear, patient-friendly language]
+[Provide a concise three to four sentence summary of the report's key findings in clear, patient-friendly language]
 
 Sentiment Analysis:
 Overall Tone of Report: [e.g. reassuring, urgent, cautious]
@@ -119,7 +119,7 @@ Estimated Patient Emotional Context: [e.g. concerned, hopeful, anxious]
 
 Important Notes:
 1. Verify medication names against a trusted medical lexicon (for example, RxNorm) and correct any spelling errors.
-2. List only the medication names under “Medications”—do not include any dosage, strength, or frequency.
+2. List only the medication names under "Medications"—do not include any dosage, strength, or frequency.
 3. If a field cannot be found, leave its value blank.
 4. Do not mix up fields—keep each piece of data under its proper heading.
 5. Do not add any extra commentary, sections, or formatting beyond what is requested.
@@ -155,8 +155,18 @@ Important Notes:
 
   void _processResponse(String response) {
     try {
-      // Clean up the response by removing markdown formatting
-      String cleanedResponse = response
+      // Clean up the response by removing JSON formatting if present
+      String cleanedResponse = response;
+      if (response.startsWith('{') && response.endsWith('}')) {
+        try {
+          final jsonResponse = json.decode(response);
+          cleanedResponse = jsonResponse['description'] ?? response;
+        } catch (e) {
+          cleanedResponse = response;
+        }
+      }
+
+      cleanedResponse = cleanedResponse
           .replaceAll('*', '')
           .replaceAll('#', '')
           .replaceAll('**', '')
@@ -168,7 +178,7 @@ Important Notes:
         'Medications:',
         'Report Summary:',
       );
-      print('medsection: $cleanedResponse');
+
       if (medsSection != null) {
         _extractedMedicines =
             medsSection
@@ -246,7 +256,6 @@ Important Notes:
         endDelimiter.isNotEmpty
             ? text.indexOf(endDelimiter, startIndex + startDelimiter.length)
             : text.length;
-
     if (endIndex == -1) return null;
 
     return text.substring(startIndex + startDelimiter.length, endIndex).trim();
@@ -259,29 +268,41 @@ Important Notes:
     for (var med in _extractedMedicines) {
       // Extract just the medicine name (without dosage)
       String medName = med.split('(')[0].trim();
-      print('medName: $medName');
-      // Find exact matches
-      var exactMatch = medicines.firstWhere(
-        (m) => _normalizeMedicineName(
-          m['Medicine Name'],
-        ).contains(_normalizeMedicineName(medName)),
-        orElse: () => {},
-      );
 
-      if (exactMatch.isNotEmpty) {
-        _matchedMedicines.add(exactMatch);
+      // Find exact or partial matches
+      var matches =
+          medicines.where((m) {
+            String dbName = m['Medicine Name']?.toString() ?? '';
+            return _normalizeMedicineName(
+                  dbName,
+                ).contains(_normalizeMedicineName(medName)) ||
+                _normalizeMedicineName(
+                  medName,
+                ).contains(_normalizeMedicineName(dbName));
+          }).toList();
+
+      if (matches.isNotEmpty) {
+        // Take the first match as the primary medicine
+        var primaryMatch = matches.first;
+        _matchedMedicines.add(primaryMatch);
 
         // Find medicines with similar composition (alternatives)
-        final composition = exactMatch['Composition'];
-        if (composition != null) {
-          final alternatives =
-              medicines
-                  .where(
-                    (m) =>
-                        m['Composition'] == composition &&
-                        m['Medicine Name'] != exactMatch['Medicine Name'],
-                  )
-                  .toList();
+        final composition = primaryMatch['Composition']?.toString();
+        if (composition != null && composition.isNotEmpty) {
+          // Get all medicines with the same composition (excluding the primary match)
+          var alternatives =
+              medicines.where((m) {
+                return m['Composition']?.toString() == composition &&
+                    m['Medicine Name']?.toString() !=
+                        primaryMatch['Medicine Name']?.toString();
+              }).toList();
+
+          // Shuffle and take up to 5 random alternatives
+          alternatives.shuffle();
+          if (alternatives.length > 5) {
+            alternatives = alternatives.sublist(0, 5);
+          }
+
           _alternativeMedicines.addAll(alternatives);
         }
       }
@@ -367,44 +388,65 @@ Important Notes:
           ),
         ),
         const SizedBox(height: 10),
-        if (_matchedMedicines.isNotEmpty) ...[
-          Text(
-            'Prescribed Medicines:',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: secondaryDark,
-            ),
+
+        // Group matched medicines with their alternatives
+        for (int i = 0; i < _matchedMedicines.length; i++)
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Prescribed Medicine ${i + 1}:',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: secondaryDark,
+                ),
+              ),
+              const SizedBox(height: 8),
+              _buildMedicineCard(_matchedMedicines[i], false),
+
+              // Show alternatives for this medicine if available
+              if (_alternativeMedicines.isNotEmpty &&
+                  _alternativeMedicines.any(
+                    (alt) =>
+                        alt['Composition'] ==
+                        _matchedMedicines[i]['Composition'],
+                  ))
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 10),
+                    Text(
+                      'Alternative Medicines (Same Composition):',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: secondaryDark,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    ..._alternativeMedicines
+                        .where(
+                          (alt) =>
+                              alt['Composition'] ==
+                              _matchedMedicines[i]['Composition'],
+                        )
+                        .map((alt) => _buildMedicineCard(alt, true)),
+                    const SizedBox(height: 10),
+                  ],
+                ),
+              const SizedBox(height: 20),
+            ],
           ),
-          const SizedBox(height: 8),
-          ..._matchedMedicines.map(
-            (medicine) => _buildMedicineCard(medicine, false),
+
+        Text(
+          'Note: Alternatives have the same active ingredients but may differ in brand or price',
+          style: TextStyle(
+            fontSize: 12,
+            color: secondary,
+            fontStyle: FontStyle.italic,
           ),
-          const SizedBox(height: 20),
-        ],
-        if (_alternativeMedicines.isNotEmpty) ...[
-          Text(
-            'Alternative Medicines (Same Composition):',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: secondaryDark,
-            ),
-          ),
-          const SizedBox(height: 8),
-          ..._alternativeMedicines.map(
-            (medicine) => _buildMedicineCard(medicine, true),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            'Note: Alternatives have the same active ingredients but may differ in brand or price',
-            style: TextStyle(
-              fontSize: 12,
-              color: secondary,
-              fontStyle: FontStyle.italic,
-            ),
-          ),
-        ],
+        ),
       ],
     );
   }
@@ -414,29 +456,55 @@ Important Notes:
       margin: const EdgeInsets.only(bottom: 10),
       color: isAlternative ? accentLight.withOpacity(0.2) : Colors.white,
       elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color:
+              isAlternative ? primaryLight.withOpacity(0.5) : Colors.grey[200]!,
+          width: 1,
+        ),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              medicine['Medicine Name'] ?? 'Unknown',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: isAlternative ? primary : primaryDark,
-              ),
+            Row(
+              children: [
+                Icon(
+                  isAlternative ? Icons.medication_outlined : Icons.medication,
+                  color: isAlternative ? primaryLight : primary,
+                  size: 24,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    medicine['Medicine Name'] ?? 'Unknown Medicine',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: isAlternative ? primary : primaryDark,
+                    ),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 5),
+            const SizedBox(height: 8),
             if (medicine['Composition'] != null)
-              Text(
-                'Composition: ${medicine['Composition']}',
-                style: TextStyle(fontSize: 14, color: Colors.black87),
+              Padding(
+                padding: const EdgeInsets.only(left: 34),
+                child: Text(
+                  'Composition: ${medicine['Composition']}',
+                  style: TextStyle(fontSize: 14, color: Colors.black87),
+                ),
               ),
             if (medicine['Dosage Form'] != null)
-              Text(
-                'Form: ${medicine['Dosage Form']}',
-                style: TextStyle(fontSize: 14, color: Colors.black87),
+              Padding(
+                padding: const EdgeInsets.only(left: 34),
+                child: Text(
+                  'Form: ${medicine['Dosage Form']}',
+                  style: TextStyle(fontSize: 14, color: Colors.black87),
+                ),
               ),
           ],
         ),
@@ -465,199 +533,247 @@ Important Notes:
           centerTitle: true,
           iconTheme: IconThemeData(color: highlight),
         ),
-        body: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  vertical: 20,
-                  horizontal: 15,
-                ),
-                decoration: BoxDecoration(
-                  color: accentLight.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                child: Column(
-                  children: [
-                    Icon(Icons.medication_liquid, size: 50, color: primary),
-                    const SizedBox(height: 10),
-                    Text(
-                      'Medicine Analysis Tool',
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: primaryDark,
-                      ),
+        body: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [accentLight.withOpacity(0.2), Colors.white],
+              stops: [0.1, 0.9],
+            ),
+          ),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 20,
+                    horizontal: 15,
+                  ),
+                  decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(20),
+                  gradient: LinearGradient(
+                    colors: [accentLight.withOpacity(0.3), primaryLight.withOpacity(0.3)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black12,
+                      blurRadius: 10,
+                      offset: Offset(0, 4),
                     ),
                   ],
                 ),
-              ),
-              const SizedBox(height: 30),
-
-              Card(
-                elevation: 3,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
                   child: Column(
                     children: [
+                      Icon(Icons.medication_liquid, size: 50, color: primary),
+                      const SizedBox(height: 10),
                       Text(
-                        'Select Report Image',
+                        'Medicine Analysis Tool',
                         style: TextStyle(
-                          fontSize: 18,
+                          fontSize: 22,
                           fontWeight: FontWeight.bold,
                           color: primaryDark,
                         ),
                       ),
-                      const SizedBox(height: 15),
-                      if (_selectedFile == null)
-                        GestureDetector(
-                          onTap: _pickImage,
-                          child: Container(
-                            height: 150,
-                            decoration: BoxDecoration(
-                              color: accentLight.withOpacity(0.3),
-                              borderRadius: BorderRadius.circular(15),
-                              border: Border.all(
-                                color: primaryLight,
-                                width: 2,
-                                style: BorderStyle.solid,
-                              ),
-                            ),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.cloud_upload,
-                                  size: 50,
-                                  color: primaryLight,
-                                ),
-                                const SizedBox(height: 10),
-                                Text(
-                                  'Tap to upload report',
-                                  style: TextStyle(
-                                    color: secondary,
-                                    fontSize: 16,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        )
-                      else
-                        Column(
-                          children: [
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(10),
-                              child: Image.file(
-                                _selectedFile!,
-                                height: 200,
-                                width: double.infinity,
-                                fit: BoxFit.cover,
-                              ),
-                            ),
-                            const SizedBox(height: 15),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              children: [
-                                ElevatedButton.icon(
-                                  onPressed: _pickImage,
-                                  icon: Icon(Icons.edit, size: 18),
-                                  label: Text('Change'),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: primaryLight,
-                                    foregroundColor: Colors.white,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                  ),
-                                ),
-                                ElevatedButton.icon(
-                                  onPressed: _clearSelection,
-                                  icon: Icon(Icons.delete, size: 18),
-                                  label: Text('Remove'),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.grey[300],
-                                    foregroundColor: primaryDark,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
+                      const SizedBox(height: 5),
+                      Text(
+                        'Upload your medical report to analyze prescribed medicines',
+                        style: TextStyle(fontSize: 14, color: secondary),
+                        textAlign: TextAlign.center,
+                      ),
                     ],
                   ),
                 ),
-              ),
-              const SizedBox(height: 30),
+                const SizedBox(height: 30),
 
-              ElevatedButton.icon(
-                onPressed: _analyzeReport,
-                icon: Icon(Icons.search, size: 24),
-                label: Text(
-                  'ANALYZE MEDICINES',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: accent,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
+                Card(
+                  color: Colors.white,
+                  elevation: 3,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(15),
                   ),
-                ),
-              ),
-              const SizedBox(height: 30),
-
-              if (_analysisResult.isNotEmpty) ...[
-                Text(
-                  _analysisResult,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: primaryDark,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 20),
-
-                // Display the formatted report
-                if (_formattedReport.isNotEmpty) ...[
-                  _buildReportSection('REPORT ANALYSIS', _formattedReport),
-                  const SizedBox(height: 20),
-                ],
-
-                // Display medicine analysis
-                _buildMedicineAnalysis(),
-                const SizedBox(height: 20),
-
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.orange[50],
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.orange[200]!),
-                  ),
-                  child: Text(
-                    'Important: Always consult with your doctor before making any changes to your prescribed medications.',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.orange[800],
-                      height: 1.4,
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      children: [
+                        Text(
+                          'Select Report Image',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: primaryDark,
+                          ),
+                        ),
+                        const SizedBox(height: 15),
+                        if (_selectedFile == null)
+                          GestureDetector(
+                            onTap: _pickImage,
+                            child: Container(
+                              height: 150,
+                              decoration: BoxDecoration(
+                                color: accentLight.withOpacity(0.3),
+                                borderRadius: BorderRadius.circular(15),
+                                border: Border.all(
+                                  color: primaryLight,
+                                  width: 2,
+                                  style: BorderStyle.solid,
+                                ),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.only(
+                                  left: 20.0,
+                                  right:20.0,
+                                ),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.cloud_upload,
+                                      size: 50,
+                                      color: primaryLight,
+                                    ),
+                                    const SizedBox(height: 10),
+                                    Text(
+                                      'Tap to upload report',
+                                      style: TextStyle(
+                                        color: secondary,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          )
+                        else
+                          Column(
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(10),
+                                child: Image.file(
+                                  _selectedFile!,
+                                  height: 200,
+                                  width: double.infinity,
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                              const SizedBox(height: 15),
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceEvenly,
+                                children: [
+                                  ElevatedButton.icon(
+                                    onPressed: _pickImage,
+                                    icon: Icon(Icons.edit, size: 18),
+                                    label: Text('Change'),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: primaryLight,
+                                      foregroundColor: Colors.white,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                    ),
+                                  ),
+                                  ElevatedButton.icon(
+                                    onPressed: _clearSelection,
+                                    icon: Icon(Icons.delete, size: 18),
+                                    label: Text('Remove'),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.grey[300],
+                                      foregroundColor: primaryDark,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                      ],
                     ),
-                    textAlign: TextAlign.center,
                   ),
                 ),
+                const SizedBox(height: 30),
+
+                ElevatedButton.icon(
+                  onPressed: _analyzeReport,
+                  icon: Icon(Icons.search, size: 24),
+                  label: Text(
+                    'ANALYZE MEDICINES',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: accent,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 3,
+                    shadowColor: accent.withOpacity(0.3),
+                  ),
+                ),
+                const SizedBox(height: 30),
+
+                if (_analysisResult.isNotEmpty) ...[
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 12,
+                      horizontal: 16,
+                    ),
+                    decoration: BoxDecoration(
+                      color: primaryLight.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: primaryLight.withOpacity(0.3)),
+                    ),
+                    child: Text(
+                      _analysisResult,
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: primaryDark,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Display the formatted report
+                  if (_formattedReport.isNotEmpty) ...[
+                    _buildReportSection('REPORT ANALYSIS', _formattedReport),
+                    const SizedBox(height: 20),
+                  ],
+
+                  // Display medicine analysis
+                  _buildMedicineAnalysis(),
+                  const SizedBox(height: 20),
+
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.orange[50],
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.orange[200]!),
+                    ),
+                    child: Text(
+                      'Important: Always consult with your doctor before making any changes to your prescribed medications.',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.orange[800],
+                        height: 1.4,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 20),
               ],
-              const SizedBox(height: 20),
-            ],
+            ),
           ),
         ),
         floatingActionButton:
@@ -668,6 +784,7 @@ Important Notes:
                   label: Text('Analyze'),
                   backgroundColor: accent,
                   foregroundColor: Colors.white,
+                  elevation: 3,
                 )
                 : null,
       ),

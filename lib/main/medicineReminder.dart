@@ -42,7 +42,7 @@ class _MedicineReminderScreenState extends State<MedicineReminderScreen> {
     'Thursday',
     'Friday',
     'Saturday',
-    'Sunday'
+    'Sunday',
   ];
 
   @override
@@ -53,21 +53,23 @@ class _MedicineReminderScreenState extends State<MedicineReminderScreen> {
 
   void _loadDataIfEditing() {
     if (_isEditing && _editingDocId != null) {
-      _firestore.collection('medicine_reminders').doc(_editingDocId).get().then((doc) {
-        if (doc.exists) {
-          final data = doc.data() as Map<String, dynamic>;
-          _medicineNameController.text = data['name'] ?? '';
-          _dosageController.text = data['dosage'] ?? '';
-          _notesController.text = data['notes'] ?? '';
-          
-          final times = List<String>.from(data['times'] ?? []);
-          _reminderTimes = times.map((time) => _stringToTime(time)).toList();
-          
-          _selectedDays = List<String>.from(data['days'] ?? []);
-          
-          setState(() {});
-        }
-      });
+      _firestore.collection('medicine_reminders').doc(_editingDocId).get().then(
+        (doc) {
+          if (doc.exists) {
+            final data = doc.data() as Map<String, dynamic>;
+            _medicineNameController.text = data['name'] ?? '';
+            _dosageController.text = data['dosage'] ?? '';
+            _notesController.text = data['notes'] ?? '';
+
+            final times = List<String>.from(data['times'] ?? []);
+            _reminderTimes = times.map((time) => _stringToTime(time)).toList();
+
+            _selectedDays = List<String>.from(data['days'] ?? []);
+
+            setState(() {});
+          }
+        },
+      );
     }
   }
 
@@ -111,7 +113,10 @@ class _MedicineReminderScreenState extends State<MedicineReminderScreen> {
       };
 
       if (_isEditing && _editingDocId != null) {
-        await _firestore.collection('medicine_reminders').doc(_editingDocId).update(medicineData);
+        await _firestore
+            .collection('medicine_reminders')
+            .doc(_editingDocId)
+            .update(medicineData);
       } else {
         medicineData['createdAt'] = FieldValue.serverTimestamp();
         await _firestore.collection('medicine_reminders').add(medicineData);
@@ -226,50 +231,67 @@ class _MedicineReminderScreenState extends State<MedicineReminderScreen> {
   Future<void> _deleteReminder(String docId) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        title: const Text('Delete Reminder', style: TextStyle(fontWeight: FontWeight.bold)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 48),
-            const SizedBox(height: 16),
-            const Text('Are you sure you want to delete this reminder?', textAlign: TextAlign.center),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      builder:
+          (context) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            title: const Text(
+              'Delete Reminder',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.pop(context, false),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.grey,
-                      side: const BorderSide(color: Colors.grey),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
+                const Icon(
+                  Icons.warning_amber_rounded,
+                  color: Colors.orange,
+                  size: 48,
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Are you sure you want to delete this reminder?',
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.grey,
+                          side: const BorderSide(color: Colors.grey),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        child: const Text('Cancel'),
+                      ),
                     ),
-                    child: const Text('Cancel'))),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () => Navigator.pop(context, true),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
-                      padding: const EdgeInsets.symmetric(vertical: 12)),
-                    
-                    child: const Text('Delete')),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () => Navigator.pop(context, true),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+
+                        child: const Text('Delete'),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
-        ),
-      ),
+          ),
     );
 
     if (confirmed == true) {
@@ -319,457 +341,613 @@ class _MedicineReminderScreenState extends State<MedicineReminderScreen> {
       body: Column(
         children: [
           Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Form Section
-                  Card(
-                    elevation: 3,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    margin: const EdgeInsets.only(bottom: 20),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Form(
-                        key: _formKey,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              _isEditing ? 'Edit Reminder' : 'Add New Reminder',
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                color: primaryDark,
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [accentLight.withOpacity(0.2), Colors.white],
+                  stops: [0.1, 0.9],
+                ),
+              ),
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Form Section
+                    Card(
+                      color: Colors.white,
+                      elevation: 3,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      margin: const EdgeInsets.only(bottom: 20),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Form(
+                          key: _formKey,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _isEditing
+                                    ? 'Edit Reminder'
+                                    : 'Add New Reminder',
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: primaryDark,
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 16),
-                            
-                            // Medicine Name
-                            TextFormField(
-                              controller: _medicineNameController,
-                              decoration: InputDecoration(
-                                labelText: 'Medicine Name',
-                                prefixIcon: Icon(Icons.medical_services, color: primary),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(color: Colors.grey.shade300),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(color: Colors.grey.shade300),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(color: primary, width: 2),
-                                ),
-                                filled: true,
-                                fillColor: Colors.white,
-                              ),
-                              validator: (value) =>
-                                  value!.isEmpty ? 'Please enter medicine name' : null,
-                            ),
-                            const SizedBox(height: 16),
+                              const SizedBox(height: 16),
 
-                            // Dosage
-                            TextFormField(
-                              controller: _dosageController,
-                              decoration: InputDecoration(
-                                labelText: 'Dosage (e.g., 1 tablet, 5ml)',
-                                prefixIcon: Icon(Icons.medication, color: primary),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(color: Colors.grey.shade300),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(color: Colors.grey.shade300),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(color: primary, width: 2),
-                                ),
-                                filled: true,
-                                fillColor: Colors.white,
-                              ),
-                              validator: (value) =>
-                                  value!.isEmpty ? 'Please enter dosage' : null,
-                            ),
-                            const SizedBox(height: 16),
-
-                            // Reminder Times
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'Reminder Times',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
+                              // Medicine Name
+                              TextFormField(
+                                controller: _medicineNameController,
+                                decoration: InputDecoration(
+                                  labelText: 'Medicine Name',
+                                  prefixIcon: Icon(
+                                    Icons.medical_services,
+                                    color: primary,
                                   ),
-                                ),
-                                const SizedBox(height: 8),
-                                if (_reminderTimes.isEmpty)
-                                  Container(
-                                    padding: const EdgeInsets.all(12),
-                                    decoration: BoxDecoration(
-                                      color: Colors.grey[100],
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Text(
-                                      'No times added yet',
-                                      style: TextStyle(color: Colors.grey[600]),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(
+                                      color: Colors.grey.shade300,
                                     ),
                                   ),
-                                if (_reminderTimes.isNotEmpty)
-                                  Wrap(
-                                    spacing: 8,
-                                    runSpacing: 8,
-                                    children: _reminderTimes.asMap().entries.map((entry) {
-                                      final index = entry.key;
-                                      final time = entry.value;
-                                      return Chip(
-                                        label: Text(
-                                          time.format(context),
-                                          style: const TextStyle(fontSize: 14),
-                                        ),
-                                        backgroundColor: primaryLight.withOpacity(0.2),
-                                        deleteIcon: const Icon(Icons.close, size: 16),
-                                        onDeleted: () => _removeTime(index),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(8),
-                                        ),
-                                        side: BorderSide.none,
-                                      );
-                                    }).toList(),
-                                  ),
-                                const SizedBox(height: 10),
-                                ElevatedButton.icon(
-                                  onPressed: () => _selectTime(context),
-                                  icon: const Icon(Icons.access_time, size: 20),
-                                  label: const Text('Add Reminder Time'),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: primaryLight,
-                                    foregroundColor: primaryDark,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(
+                                      color: Colors.grey.shade300,
                                     ),
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 16, vertical: 12),
-                                    elevation: 0,
                                   ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 16),
-
-                            // Days of Week
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'Days to Repeat',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(
+                                      color: primary,
+                                      width: 2,
+                                    ),
                                   ),
+                                  filled: true,
+                                  fillColor: Colors.white,
                                 ),
-                                const SizedBox(height: 8),
-                                Wrap(
-                                  spacing: 8,
-                                  runSpacing: 8,
-                                  children: _daysOfWeek.map((day) => FilterChip(
-                                        label: Text(day),
-                                        selected: _selectedDays.contains(day),
-                                        onSelected: (_) => _toggleDay(day),
-                                        selectedColor: primary,
-                                        checkmarkColor: Colors.white,
-                                        labelStyle: TextStyle(
-                                          color: _selectedDays.contains(day)
-                                              ? Colors.white
-                                              : Colors.black,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(8),
-                                        ),
-                                        showCheckmark: true,
-                                      )).toList(),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 16),
-
-                            // Additional Notes
-                            TextFormField(
-                              controller: _notesController,
-                              maxLines: 3,
-                              decoration: InputDecoration(
-                                labelText: 'Additional Notes (optional)',
-                                alignLabelWithHint: true,
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(color: Colors.grey.shade300),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(color: Colors.grey.shade300),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(color: primary, width: 2),
-                                ),
-                                filled: true,
-                                fillColor: Colors.white,
+                                validator:
+                                    (value) =>
+                                        value!.isEmpty
+                                            ? 'Please enter medicine name'
+                                            : null,
                               ),
-                            ),
-                            const SizedBox(height: 20),
+                              const SizedBox(height: 16),
 
-                            // Save/Cancel Buttons
-                            Row(
-                              children: [
-                                if (_isEditing)
-                                  Expanded(
-                                    child: OutlinedButton(
-                                      onPressed: _resetForm,
-                                      style: OutlinedButton.styleFrom(
-                                        foregroundColor: Colors.grey,
-                                        side: const BorderSide(color: Colors.grey),
-                                        padding: const EdgeInsets.symmetric(vertical: 16),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(12),
+                              // Dosage
+                              TextFormField(
+                                controller: _dosageController,
+                                decoration: InputDecoration(
+                                  labelText: 'Dosage (e.g., 1 tablet, 5ml)',
+                                  prefixIcon: Icon(
+                                    Icons.medication,
+                                    color: primary,
+                                  ),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(
+                                      color: Colors.grey.shade300,
+                                    ),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(
+                                      color: Colors.grey.shade300,
+                                    ),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(
+                                      color: primary,
+                                      width: 2,
+                                    ),
+                                  ),
+                                  filled: true,
+                                  fillColor: Colors.white,
+                                ),
+                                validator:
+                                    (value) =>
+                                        value!.isEmpty
+                                            ? 'Please enter dosage'
+                                            : null,
+                              ),
+                              const SizedBox(height: 16),
+
+                              // Reminder Times
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Reminder Times',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  if (_reminderTimes.isEmpty)
+                                    Container(
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey[100],
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Text(
+                                        'No times added yet',
+                                        style: TextStyle(
+                                          color: Colors.grey[600],
                                         ),
                                       ),
-                                      child: const Text('Cancel'),
                                     ),
-                                  ),
-                                if (_isEditing) const SizedBox(width: 16),
-                                Expanded(
-                                  child: ElevatedButton(
-                                    onPressed: _isLoading ? null : _saveMedicineReminder,
+                                  if (_reminderTimes.isNotEmpty)
+                                    Wrap(
+                                      spacing: 8,
+                                      runSpacing: 8,
+                                      children:
+                                          _reminderTimes.asMap().entries.map((
+                                            entry,
+                                          ) {
+                                            final index = entry.key;
+                                            final time = entry.value;
+                                            return Chip(
+                                              label: Text(
+                                                time.format(context),
+                                                style: const TextStyle(
+                                                  fontSize: 14,
+                                                ),
+                                              ),
+                                              backgroundColor: primaryLight
+                                                  .withOpacity(0.2),
+                                              deleteIcon: const Icon(
+                                                Icons.close,
+                                                size: 16,
+                                              ),
+                                              onDeleted:
+                                                  () => _removeTime(index),
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
+                                              ),
+                                              side: BorderSide.none,
+                                            );
+                                          }).toList(),
+                                    ),
+                                  const SizedBox(height: 10),
+                                  ElevatedButton.icon(
+                                    onPressed: () => _selectTime(context),
+                                    icon: const Icon(
+                                      Icons.access_time,
+                                      size: 20,
+                                    ),
+                                    label: const Text('Add Reminder Time'),
                                     style: ElevatedButton.styleFrom(
-                                      backgroundColor: _isEditing ? secondary : primary,
-                                      foregroundColor: Colors.white,
-                                      padding: const EdgeInsets.symmetric(vertical: 16),
+                                      backgroundColor: primaryLight,
+                                      foregroundColor: primaryDark,
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(12),
                                       ),
-                                      elevation: 3,
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 16,
+                                        vertical: 12,
+                                      ),
+                                      elevation: 0,
                                     ),
-                                    child: _isLoading
-                                        ? const SizedBox(
-                                            width: 20,
-                                            height: 20,
-                                            child: CircularProgressIndicator(
-                                              strokeWidth: 2,
-                                              color: Colors.white,
-                                            ),
-                                          )
-                                        : Text(
-                                            _isEditing ? 'Update Reminder' : 'Save Reminder',
-                                            style: const TextStyle(fontSize: 16),
-                                          ),
                                   ),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+
+                              // Days of Week
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Days to Repeat',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Wrap(
+                                    spacing: 8,
+                                    runSpacing: 8,
+                                    children:
+                                        _daysOfWeek
+                                            .map(
+                                              (day) => FilterChip(
+  label: Text(day),
+  selected: _selectedDays.contains(day),
+  onSelected: (_) => _toggleDay(day),
+  selectedColor: primary,
+  checkmarkColor: Colors.white,
+  labelStyle: TextStyle(
+    color: _selectedDays.contains(day) ? Colors.white : Colors.black,
+    fontWeight: FontWeight.w500,
+  ),
+  shape: RoundedRectangleBorder(
+    borderRadius: BorderRadius.circular(8),
+  ),
+  showCheckmark: true,
+  backgroundColor: Colors.white,  // Set the background color to white
+),
+
+                                            )
+                                            .toList(),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+
+                              // Additional Notes
+                              TextFormField(
+                                controller: _notesController,
+                                maxLines: 3,
+                                decoration: InputDecoration(
+                                  labelText: 'Additional Notes (optional)',
+                                  alignLabelWithHint: true,
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(
+                                      color: Colors.grey.shade300,
+                                    ),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(
+                                      color: Colors.grey.shade300,
+                                    ),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(
+                                      color: primary,
+                                      width: 2,
+                                    ),
+                                  ),
+                                  filled: true,
+                                  fillColor: Colors.white,
                                 ),
-                              ],
-                            ),
-                          ],
+                              ),
+                              const SizedBox(height: 20),
+
+                              // Save/Cancel Buttons
+                              Row(
+                                children: [
+                                  if (_isEditing)
+                                    Expanded(
+                                      child: OutlinedButton(
+                                        onPressed: _resetForm,
+                                        style: OutlinedButton.styleFrom(
+                                          foregroundColor: Colors.grey,
+                                          side: const BorderSide(
+                                            color: Colors.grey,
+                                          ),
+                                          padding: const EdgeInsets.symmetric(
+                                            vertical: 16,
+                                          ),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                          ),
+                                        ),
+                                        child: const Text('Cancel'),
+                                      ),
+                                    ),
+                                  if (_isEditing) const SizedBox(width: 16),
+                                  Expanded(
+                                    child: ElevatedButton(
+                                      onPressed:
+                                          _isLoading
+                                              ? null
+                                              : _saveMedicineReminder,
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor:
+                                            _isEditing ? accent : accent,
+                                        foregroundColor: Colors.white,
+                                        padding: const EdgeInsets.symmetric(
+                                          vertical: 16,
+                                        ),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                        ),
+                                        elevation: 3,
+                                      ),
+                                      child:
+                                          _isLoading
+                                              ? const SizedBox(
+                                                width: 20,
+                                                height: 20,
+                                                child:
+                                                    CircularProgressIndicator(
+                                                      strokeWidth: 2,
+                                                      color: Colors.white,
+                                                    ),
+                                              )
+                                              : Text(
+                                                _isEditing
+                                                    ? 'Update Reminder'
+                                                    : 'Save Reminder',
+                                                style: const TextStyle(
+                                                  fontSize: 16,
+                                                ),
+                                              ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
-                  ),
 
-                  // Saved Reminders Section
-                  Text(
-                    'Your Reminders',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: primaryDark,
+                    // Saved Reminders Section
+                    Text(
+                      'Your Reminders',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: primaryDark,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  StreamBuilder<QuerySnapshot>(
-                    stream: _firestore
-                        .collection('medicine_reminders')
-                        .where('userId', isEqualTo: _auth.currentUser?.uid ?? '')
-                        .orderBy('createdAt', descending: true)
-                        .snapshots(),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
+                    const SizedBox(height: 12),
+                    StreamBuilder<QuerySnapshot>(
+                      stream:
+                          _firestore
+                              .collection('medicine_reminders')
+                              .where(
+                                'userId',
+                                isEqualTo: _auth.currentUser?.uid ?? '',
+                              )
+                              .orderBy('createdAt', descending: true)
+                              .snapshots(),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const Center(
+                            child: CircularProgressIndicator(),
+                          );
+                        }
 
-                      if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                        return Card(
-                          elevation: 2,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Column(
-                              children: [
-                                Icon(Icons.notifications_off, size: 48, color: Colors.grey[400]),
-                                const SizedBox(height: 8),
-                                Text(
-                                  'No reminders saved yet',
-                                  style: TextStyle(color: Colors.grey[600]),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      }
-
-                      return ListView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: snapshot.data!.docs.length,
-                        itemBuilder: (context, index) {
-                          final doc = snapshot.data!.docs[index];
-                          final data = doc.data() as Map<String, dynamic>;
-                          
-                          final times = List<String>.from(data['times'] ?? []);
-                          final days = List<String>.from(data['days'] ?? []);
-
+                        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                           return Card(
+                            color: Colors.white,
                             elevation: 2,
-                            margin: const EdgeInsets.only(bottom: 16),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
+                              borderRadius: BorderRadius.circular(12),
                             ),
                             child: Padding(
                               padding: const EdgeInsets.all(16),
                               child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Expanded(
-                                        child: Text(
-                                          data['name'] ?? 'No name',
-                                          style: TextStyle(
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.bold,
-                                            color: primaryDark,
-                                          ),
-                                        ),
-                                      ),
-                                      PopupMenuButton(
-                                        icon: Icon(Icons.more_vert, color: Colors.grey[600]),
-                                        itemBuilder: (context) => [
-                                          PopupMenuItem(
-                                            value: 'edit',
-                                            child: Row(
-                                              children: [
-                                                Icon(Icons.edit, color: primary, size: 20),
-                                                const SizedBox(width: 8),
-                                                const Text('Edit'),
-                                              ],
-                                            ),
-                                          ),
-                                          PopupMenuItem(
-                                            value: 'delete',
-                                            child: Row(
-                                              children: [
-                                                Icon(Icons.delete, color: Colors.red, size: 20),
-                                                const SizedBox(width: 8),
-                                                const Text('Delete'),
-                                              ],
-                                            ),
-                                          ),
-                                        ],
-                                        onSelected: (value) {
-                                          if (value == 'edit') {
-                                            _editReminder(doc.id);
-                                          } else if (value == 'delete') {
-                                            _deleteReminder(doc.id);
-                                          }
-                                        },
-                                      ),
-                                    ],
+                                  Icon(
+                                    Icons.notifications_off,
+                                    size: 48,
+                                    color: Colors.grey[400],
                                   ),
                                   const SizedBox(height: 8),
-                                  Row(
-                                    children: [
-                                      Icon(Icons.medication, size: 16, color: primary),
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        'Dosage: ${data['dosage'] ?? 'Not specified'}',
-                                        style: const TextStyle(fontSize: 14),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 8),
-                                  if (data['notes'] != null && data['notes'].isNotEmpty)
-                                    Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          children: [
-                                            Icon(Icons.notes, size: 16, color: primary),
-                                            const SizedBox(width: 8),
-                                            const Text('Notes:', style: TextStyle(fontSize: 14)),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          data['notes'],
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            color: Colors.grey[700],
-                                          ),
-                                        ),
-                                        const SizedBox(height: 8),
-                                      ],
-                                    ),
-                                  const SizedBox(height: 8),
-                                  Wrap(
-                                    spacing: 8,
-                                    runSpacing: 8,
-                                    children: days.map((day) => Chip(
-                                          label: Text(
-                                            day,
-                                            style: const TextStyle(fontSize: 12),
-                                          ),
-                                          backgroundColor: accentLight.withOpacity(0.3),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          side: BorderSide.none,
-                                        )).toList(),
-                                  ),
-                                  const SizedBox(height: 12),
-                                  Wrap(
-                                    spacing: 8,
-                                    runSpacing: 8,
-                                    children: times.map((time) => Chip(
-                                          label: Text(
-                                            time,
-                                            style: const TextStyle(fontSize: 12),
-                                          ),
-                                          avatar: Icon(Icons.access_time, size: 16, color: primary),
-                                          backgroundColor: highlight.withOpacity(0.3),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          side: BorderSide.none,
-                                        )).toList(),
+                                  Text(
+                                    'No reminders saved yet',
+                                    style: TextStyle(color: Colors.grey[600]),
                                   ),
                                 ],
                               ),
                             ),
                           );
-                        },
-                      );
-                    },
-                  ),
-                ],
+                        }
+
+                        return ListView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: snapshot.data!.docs.length,
+                          itemBuilder: (context, index) {
+                            final doc = snapshot.data!.docs[index];
+                            final data = doc.data() as Map<String, dynamic>;
+
+                            final times = List<String>.from(
+                              data['times'] ?? [],
+                            );
+                            final days = List<String>.from(data['days'] ?? []);
+
+                            return Card(
+                              color: Colors.white,
+                              elevation: 2,
+                              margin: const EdgeInsets.only(bottom: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            data['name'] ?? 'No name',
+                                            style: TextStyle(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.bold,
+                                              color: primaryDark,
+                                            ),
+                                          ),
+                                        ),
+                                        PopupMenuButton(
+                                          icon: Icon(
+                                            Icons.more_vert,
+                                            color: Colors.grey[600],
+                                          ),
+                                          itemBuilder:
+                                              (context) => [
+                                                PopupMenuItem(
+                                                  value: 'edit',
+                                                  child: Row(
+                                                    children: [
+                                                      Icon(
+                                                        Icons.edit,
+                                                        color: primary,
+                                                        size: 20,
+                                                      ),
+                                                      const SizedBox(width: 8),
+                                                      const Text('Edit'),
+                                                    ],
+                                                  ),
+                                                ),
+                                                PopupMenuItem(
+                                                  value: 'delete',
+                                                  child: Row(
+                                                    children: [
+                                                      Icon(
+                                                        Icons.delete,
+                                                        color: Colors.red,
+                                                        size: 20,
+                                                      ),
+                                                      const SizedBox(width: 8),
+                                                      const Text('Delete'),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ],
+                                          onSelected: (value) {
+                                            if (value == 'edit') {
+                                              _editReminder(doc.id);
+                                            } else if (value == 'delete') {
+                                              _deleteReminder(doc.id);
+                                            }
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Row(
+                                      children: [
+                                        Icon(
+                                          Icons.medication,
+                                          size: 16,
+                                          color: primary,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          'Dosage: ${data['dosage'] ?? 'Not specified'}',
+                                          style: const TextStyle(fontSize: 14),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 8),
+                                    if (data['notes'] != null &&
+                                        data['notes'].isNotEmpty)
+                                      Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            children: [
+                                              Icon(
+                                                Icons.notes,
+                                                size: 16,
+                                                color: primary,
+                                              ),
+                                              const SizedBox(width: 8),
+                                              const Text(
+                                                'Notes:',
+                                                style: TextStyle(fontSize: 14),
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            data['notes'],
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              color: Colors.grey[700],
+                                            ),
+                                          ),
+                                          const SizedBox(height: 8),
+                                        ],
+                                      ),
+                                    const SizedBox(height: 8),
+                                    Wrap(
+                                      spacing: 8,
+                                      runSpacing: 8,
+                                      children:
+                                          days
+                                              .map(
+                                                (day) => Chip(
+                                                  label: Text(
+                                                    day,
+                                                    style: const TextStyle(
+                                                      fontSize: 12,
+                                                    ),
+                                                  ),
+                                                  backgroundColor: accentLight
+                                                      .withOpacity(0.3),
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          8,
+                                                        ),
+                                                  ),
+                                                  side: BorderSide.none,
+                                                ),
+                                              )
+                                              .toList(),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    Wrap(
+                                      spacing: 8,
+                                      runSpacing: 8,
+                                      children:
+                                          times
+                                              .map(
+                                                (time) => Chip(
+                                                  label: Text(
+                                                    time,
+                                                    style: const TextStyle(
+                                                      fontSize: 12,
+                                                    ),
+                                                  ),
+                                                  avatar: Icon(
+                                                    Icons.access_time,
+                                                    size: 16,
+                                                    color: primary,
+                                                  ),
+                                                  backgroundColor: highlight
+                                                      .withOpacity(0.3),
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          8,
+                                                        ),
+                                                  ),
+                                                  side: BorderSide.none,
+                                                ),
+                                              )
+                                              .toList(),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

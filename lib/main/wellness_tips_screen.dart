@@ -1,22 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 
 class WellnessTipsScreen extends StatelessWidget {
-  // Define theme colors based on provided palette
-  final Color primaryDark = const Color(0xFF03045E);
-  final Color primary = const Color(0xFF0077B6);
+  // Define theme colors based on HealthLogScreen palette
+  final Color primaryColor = const Color(0xFF03045E);
   final Color primaryLight = const Color(0xFF00B4D8);
-  final Color secondaryDark = const Color(0xFF05668D);
-  final Color secondary = const Color(0xFF028090);
+  final Color accentColor = const Color(0xFF02C39A);
+  final Color backgroundColor = Colors.white;
   final Color accentLight = const Color(0xFF90E0EF);
-  final Color accent = const Color(0xFF02C39A);
-  final Color highlight = const Color(0xFFF0F3BD);
 
   final List<Map<String, dynamic>> wellnessCategories = [
     {
       'title': 'Nutrition',
       'icon': Icons.restaurant,
-      'color': const Color(0xFF0077B6), // Using primary color
+      'color': const Color(0xFF00B4D8), // Using primaryLight
       'tips': [
         'Eat 5 servings of fruits and vegetables daily',
         'Stay hydrated - drink at least 8 glasses of water',
@@ -40,7 +36,7 @@ class WellnessTipsScreen extends StatelessWidget {
     {
       'title': 'Sleep',
       'icon': Icons.bedtime,
-      'color': const Color(0xFF00B4D8), // Using primaryLight
+      'color': const Color(0xFF03045E), // Using primaryDark
       'tips': [
         'Maintain consistent sleep schedule',
         'Create a relaxing bedtime routine',
@@ -78,7 +74,7 @@ class WellnessTipsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: backgroundColor,
       appBar: AppBar(
         title: Text(
           'Wellness Tips',
@@ -89,108 +85,113 @@ class WellnessTipsScreen extends StatelessWidget {
           ),
         ),
         centerTitle: true,
-        backgroundColor: primaryDark,
+        backgroundColor: primaryColor,
         elevation: 0,
         iconTheme: IconThemeData(color: Colors.white),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(
-            bottom: Radius.circular(20),
+        ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [accentLight.withOpacity(0.2), Colors.white],
+            stops: [0.1, 0.9],
           ),
         ),
-      ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header Card
-            Container(
-              width: double.infinity,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
-                gradient: LinearGradient(
-                  colors: [primaryLight.withOpacity(0.3), accentLight.withOpacity(0.3)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black12,
-                    blurRadius: 10,
-                    offset: Offset(0, 4),
+        child: SingleChildScrollView(
+          padding: EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header Card
+              Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(20),
+                  gradient: LinearGradient(
+                    colors: [accentLight.withOpacity(0.3), primaryLight.withOpacity(0.3)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
-                ],
-              ),
-              child: Padding(
-                padding: EdgeInsets.all(20),
-                child: Column(
-                  children: [
-                    Container(
-                      padding: EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: primary.withOpacity(0.1),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(Icons.health_and_safety, 
-                          size: 40, 
-                          color: primary),
-                    ),
-                    SizedBox(height: 15),
-                    Text(
-                      'Daily Wellness Guide',
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: primaryDark,
-                      ),
-                    ),
-                    SizedBox(height: 10),
-                    Text(
-                      'Small daily habits lead to big health improvements. '
-                      'Explore tips to enhance your wellbeing in different areas.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: secondaryDark,
-                        fontSize: 15,
-                        height: 1.5,
-                      ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black12,
+                      blurRadius: 10,
+                      offset: Offset(0, 4),
                     ),
                   ],
                 ),
-              ),
-            ),
-            SizedBox(height: 25),
-            
-            // Section title
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 8.0),
-              child: Text(
-                'Wellness Categories',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: primaryDark,
+                child: Padding(
+                  padding: EdgeInsets.all(20),
+                  child: Column(
+                    children: [
+                      Container(
+                        padding: EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: primaryColor.withOpacity(0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(Icons.health_and_safety, 
+                            size: 40, 
+                            color: primaryColor),
+                      ),
+                      SizedBox(height: 15),
+                      Text(
+                        'Daily Wellness Guide',
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: primaryColor,
+                        ),
+                      ),
+                      SizedBox(height: 10),
+                      Text(
+                        'Small daily habits lead to big health improvements. '
+                        'Explore tips to enhance your wellbeing in different areas.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: primaryColor.withOpacity(0.8),
+                          fontSize: 15,
+                          height: 1.5,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-            SizedBox(height: 15),
-            
-            // Categories List
-            ListView.builder(
-              shrinkWrap: true,
-              physics: NeverScrollableScrollPhysics(),
-              itemCount: wellnessCategories.length,
-              itemBuilder: (context, index) {
-                return _buildCategoryCard(
-                  context,
-                  wellnessCategories[index]['title'],
-                  wellnessCategories[index]['icon'],
-                  wellnessCategories[index]['color'],
-                  wellnessCategories[index]['tips'],
-                );
-              },
-            ),
-          ],
+              SizedBox(height: 25),
+              
+              // Section title
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 8.0),
+                child: Text(
+                  'Wellness Categories',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: primaryColor,
+                  ),
+                ),
+              ),
+              SizedBox(height: 15),
+              
+              // Categories List
+              ListView.builder(
+                shrinkWrap: true,
+                physics: NeverScrollableScrollPhysics(),
+                itemCount: wellnessCategories.length,
+                itemBuilder: (context, index) {
+                  return _buildCategoryCard(
+                    context,
+                    wellnessCategories[index]['title'],
+                    wellnessCategories[index]['icon'],
+                    wellnessCategories[index]['color'],
+                    wellnessCategories[index]['tips'],
+                  );
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -201,6 +202,7 @@ class WellnessTipsScreen extends StatelessWidget {
     return Container(
       margin: EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
+        
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
@@ -211,6 +213,7 @@ class WellnessTipsScreen extends StatelessWidget {
         ],
       ),
       child: Card(
+        color: Colors.white,
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
@@ -237,12 +240,12 @@ class WellnessTipsScreen extends StatelessWidget {
             style: TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: 18,
-              color: primaryDark,
+              color: primaryColor,
             ),
           ),
           trailing: Icon(
             Icons.expand_more,
-            color: primary,
+            color: primaryColor,
             size: 28,
           ),
           children: [

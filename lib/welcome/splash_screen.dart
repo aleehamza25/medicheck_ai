@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:health_assistant/main/dashboard_screen.dart';
+import 'package:health_assistant/welcome/location_persmission.dart';
 import 'package:health_assistant/welcome/login_screen.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -43,21 +44,24 @@ class _SplashScreenState extends State<SplashScreen>
       CurvedAnimation(
         parent: _animationController,
         curve: const Interval(0.0, 0.5, curve: Curves.easeInCubic),
-    ));
+      ),
+    );
 
     // Scale animation for the logo
     _scaleAnimation = Tween<double>(begin: 0.7, end: 1.0).animate(
       CurvedAnimation(
         parent: _animationController,
         curve: const Interval(0.2, 0.8, curve: Curves.elasticOut),
-    ));
+      ),
+    );
 
     // Text scale animation
     _textScaleAnimation = Tween<double>(begin: 0.9, end: 1.0).animate(
       CurvedAnimation(
         parent: _animationController,
         curve: const Interval(0.5, 1.0, curve: Curves.easeOutBack),
-    ));
+      ),
+    );
 
     // Text slide animation
     _textSlideAnimation = Tween<Offset>(
@@ -67,31 +71,18 @@ class _SplashScreenState extends State<SplashScreen>
       CurvedAnimation(
         parent: _animationController,
         curve: const Interval(0.5, 1.0, curve: Curves.easeOutQuad),
-    ));
+      ),
+    );
 
     _animationController.forward();
 
     // Check auth state after animation completes
     Timer(const Duration(milliseconds: 4000), () {
-      _checkAuthState();
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => LocationPermissionScreen()),
+      );
     });
-  }
-
-  Future<void> _checkAuthState() async {
-    final auth = FirebaseAuth.instance;
-    final user = auth.currentUser;
-
-    if (user != null) {
-      // User is logged in, go to dashboard
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) =>  DashboardScreen()),
-      );
-    } else {
-      // User is not logged in, go to login screen
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) =>  LoginScreen()),
-      );
-    }
   }
 
   @override
@@ -111,11 +102,7 @@ class _SplashScreenState extends State<SplashScreen>
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [
-                  primaryLight,
-                  primary,
-                  primaryDark,
-                ],
+                colors: [primaryLight, primary, primaryDark],
                 stops: const [0.1, 0.5, 0.9],
               ),
             ),
@@ -141,11 +128,29 @@ class _SplashScreenState extends State<SplashScreen>
                             ),
                           ],
                         ),
-                        child: Image.asset(
-                          'assets/images/logo.png',
+                        child: Container(
                           width: 130,
                           height: 130,
-                          color: Colors.white.withOpacity(0.95),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.2),
+                                blurRadius: 10,
+                                spreadRadius: 2,
+                              ),
+                            ],
+                          ),
+                          child: ClipOval(
+                            child: Padding(
+                              padding: const EdgeInsets.all(20.0),
+                              child: Image.asset(
+                                'assets/images/logo.png',
+                                fit: BoxFit.contain,
+                              ),
+                            ),
+                          ),
                         ),
                       ),
                     ),

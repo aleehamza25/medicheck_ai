@@ -6,6 +6,7 @@ import 'package:health_assistant/main/medicineReminder.dart';
 import 'package:health_assistant/main/profile_screen.dart';
 import 'package:health_assistant/main/reportScanner.dart';
 import 'package:health_assistant/main/report_generation_screen.dart';
+import 'package:health_assistant/main/step_counter.dart';
 import 'package:health_assistant/main/symptom_input_screen.dart';
 import 'package:health_assistant/main/voice_assistant.dart';
 import 'package:health_assistant/main/wellness_tips_screen.dart';
@@ -133,9 +134,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         centerTitle: true,
         backgroundColor: primaryDark,
         elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
-        ),
+        
         actions: [
           IconButton(
             icon: Icon(Icons.account_circle, color: Colors.white, size: 30),
@@ -291,6 +290,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 );
               },
             ),
+            _buildDashboardCard(
+  context: context,
+  title: 'Steps Counter',
+  icon: Icons.directions_walk, // Changed to an appropriate icon for steps counter
+  color: Color.fromARGB(255, 42, 132, 143), // You can change the color if needed
+  onTap: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => StepsCounterScreen(),
+      ),
+    );
+  },
+)
+
           ],
         );
       },

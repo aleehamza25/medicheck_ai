@@ -55,6 +55,11 @@ dependencies:
   modal_progress_hud_nsn: ^0.5.1
   google_translator: ^1.0.0
   flutter_launcher_icons: ^0.14.2
+  geolocator: ^14.0.0
+  geocoding: ^3.0.0
+  pedometer: ^4.1.1
+  firebase_messaging: ^15.2.5
+  flutter_local_notifications: ^19.2.0
 
 
 
@@ -94,6 +99,7 @@ flutter:
     - assets/svg/
     - assets/icon/
     - lib/medicines.json
+    - lib/doctors.json
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see

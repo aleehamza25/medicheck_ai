@@ -261,9 +261,11 @@ You are a professional medical assistant. Follow these rules strictly:
 
   @override
   Widget build(BuildContext context) {
-    final Color primaryColor = const Color(0xFF0D47A1);
+    final Color primaryColor = const Color(0xFF03045E);
     final Color secondaryColor = const Color(0xFF1976D2);
     final Color accentColor = const Color(0xFFE3F2FD);
+    final Color primaryLight = const Color(0xFF00B4D8);
+  final Color accentLight = const Color(0xFF90E0EF);
 
     return Scaffold(
       appBar: AppBar(
@@ -300,12 +302,20 @@ You are a professional medical assistant. Follow these rules strictly:
       ),
       body: Container(
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [primaryColor.withOpacity(0.1), accentColor],
-          ),
-        ),
+                  borderRadius: BorderRadius.circular(20),
+                  gradient: LinearGradient(
+                    colors: [accentLight.withOpacity(0.3), primaryLight.withOpacity(0.3)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black12,
+                      blurRadius: 10,
+                      offset: Offset(0, 4),
+                    ),
+                  ],
+                ),
         child: Column(
           children: [
             // Language indicator

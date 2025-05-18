@@ -371,24 +371,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
       body:
           _isLoading
               ? _buildShimmerLoader()
-              : SingleChildScrollView(
-                physics: BouncingScrollPhysics(),
-                child: Column(
-                  children: [
-                    // Profile Header
-                    _buildProfileHeader(context),
-
-                    // Personal Information Section
-                    _buildPersonalInfoSection(context),
-
-                    // Medical Information Section
-                    _buildMedicalInfoSection(context),
-
-                    // Logout Button
-                    _buildLogoutButton(context),
-
-                    SizedBox(height: 30),
-                  ],
+              : Container(
+                decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [accentLight.withOpacity(0.2), Colors.white],
+            stops: [0.1, 0.9],
+          ),
+        ),
+                child: SingleChildScrollView(
+                  physics: BouncingScrollPhysics(),
+                  child: Column(
+                    children: [
+                      // Profile Header
+                      _buildProfileHeader(context),
+                
+                      // Personal Information Section
+                      _buildPersonalInfoSection(context),
+                
+                      // Medical Information Section
+                      _buildMedicalInfoSection(context),
+                
+                      // Logout Button
+                      _buildLogoutButton(context),
+                
+                      SizedBox(height: 30),
+                    ],
+                  ),
                 ),
               ),
     );
