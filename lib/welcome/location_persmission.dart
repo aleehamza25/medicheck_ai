@@ -349,26 +349,26 @@ class _LocationPermissionScreenState extends State<LocationPermissionScreen>
             child: Stack(
               alignment: Alignment.center,
               children: [
-                Container(
-                  padding: const EdgeInsets.all(25),
-                  decoration: BoxDecoration(
-                    color: accent.withOpacity(0.2),
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: primaryDark.withOpacity(0.3),
-                        blurRadius: 30,
-                        spreadRadius: 5,
-                      ),
-                    ],
-                  ),
-                  child: SvgPicture.asset(
-                    'assets/svg/location.svg',
-                    width: 60,
-                    height: 60,
-                    color: Colors.white.withOpacity(0.95),
-                  ),
-                ),
+                // Container(
+                //   padding: const EdgeInsets.all(25),
+                //   decoration: BoxDecoration(
+                //     color: accent.withOpacity(0.2),
+                //     shape: BoxShape.circle,
+                //     boxShadow: [
+                //       BoxShadow(
+                //         color: primaryDark.withOpacity(0.3),
+                //         blurRadius: 30,
+                //         spreadRadius: 5,
+                //       ),
+                //     ],
+                //   ),
+                //   child: SvgPicture.asset(
+                //     'assets/svg/location.svg',
+                //     width: 60,
+                //     height: 60,
+                //     color: Colors.white.withOpacity(0.95),
+                //   ),
+                // ),
                 Icon(Icons.check_circle, 
                   color: highlight, 
                   size: 40,

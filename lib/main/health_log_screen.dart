@@ -20,9 +20,9 @@ class _HealthLogScreenState extends State<HealthLogScreen> {
   DocumentSnapshot? _lastDocument;
 
   // Controllers for health metrics
-  final _weightController = TextEditingController();
+  final _heartRateController = TextEditingController();
   final _bpController = TextEditingController();
-  final _glucoseController = TextEditingController();
+  final _temperatureController = TextEditingController();
   final _notesController = TextEditingController();
 
   // Color scheme based on primary color
@@ -46,9 +46,9 @@ class _HealthLogScreenState extends State<HealthLogScreen> {
 
   @override
   void dispose() {
-    _weightController.dispose();
+    _heartRateController.dispose();
     _bpController.dispose();
-    _glucoseController.dispose();
+    _temperatureController.dispose();
     _notesController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -128,9 +128,9 @@ class _HealthLogScreenState extends State<HealthLogScreen> {
 
       try {
         await FirebaseFirestore.instance.collection('health_logs').add({
-          'weight': _weightController.text,
+          'heart_rate': _heartRateController.text,
           'blood_pressure': _bpController.text,
-          'glucose': _glucoseController.text,
+          'temperature': _temperatureController.text,
           'notes': _notesController.text,
           'date': DateFormat('yyyy-MM-dd').format(DateTime.now()),
           'timestamp': FieldValue.serverTimestamp(),
@@ -138,9 +138,9 @@ class _HealthLogScreenState extends State<HealthLogScreen> {
         });
 
         // Clear fields
-        _weightController.clear();
+        _heartRateController.clear();
         _bpController.clear();
-        _glucoseController.clear();
+        _temperatureController.clear();
         _notesController.clear();
 
         // Refresh entries
@@ -168,8 +168,7 @@ class _HealthLogScreenState extends State<HealthLogScreen> {
         backgroundColor: Colors.green,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      ),
-    );
+    ));
   }
 
   Widget _buildInputField({
@@ -194,8 +193,8 @@ class _HealthLogScreenState extends State<HealthLogScreen> {
             borderSide: BorderSide(color: accentColor, width: 2),
             borderRadius: BorderRadius.circular(12),
           ),
-          filled: true, // This property enables the background color
-          fillColor: Colors.white, // Set the background color to white
+          filled: true,
+          fillColor: Colors.white,
         ),
         validator: validator,
       ),
@@ -262,11 +261,11 @@ class _HealthLogScreenState extends State<HealthLogScreen> {
               ],
             ),
             SizedBox(height: 10),
-            if (entry['weight'] != null)
+            if (entry['heart_rate'] != null)
               _buildMetricRow(
-                'Weight',
-                '${entry['weight']} kg',
-                Icons.monitor_weight,
+                'Heart Rate',
+                '${entry['heart_rate']} bpm',
+                Icons.favorite_border,
               ),
             if (entry['blood_pressure'] != null)
               _buildMetricRow(
@@ -274,11 +273,11 @@ class _HealthLogScreenState extends State<HealthLogScreen> {
                 entry['blood_pressure'],
                 Icons.favorite,
               ),
-            if (entry['glucose'] != null)
+            if (entry['temperature'] != null)
               _buildMetricRow(
-                'Glucose',
-                '${entry['glucose']} mg/dL',
-                Icons.bloodtype,
+                'Temperature',
+                '${entry['temperature']} °C',
+                Icons.thermostat,
               ),
             if (entry['notes'] != null && entry['notes'].isNotEmpty)
               Padding(
@@ -365,31 +364,49 @@ class _HealthLogScreenState extends State<HealthLogScreen> {
                 ),
                 SizedBox(height: 20),
 
-                // Health metrics form
+                // Heart Rate
                 _buildInputField(
-                  label: 'Weight (kg)',
-                  hint: 'Enter your weight',
-                  controller: _weightController,
-                  icon: Icons.monitor_weight,
+                  label: 'Heart Rate (bpm)',
+                  hint: 'Enter your heart rate',
+                  controller: _heartRateController,
+                  icon: Icons.favorite_border,
                   validator: (value) => value!.isEmpty ? 'Required' : null,
                   keyboardType: TextInputType.number,
                 ),
 
+                // Blood Pressure
                 _buildInputField(
                   label: 'Blood Pressure',
                   hint: 'e.g. 120/80',
                   controller: _bpController,
                   icon: Icons.favorite,
-                  validator: (value) => value!.isEmpty ? 'Required' : null,
+                  validator: (value) {
+                    if (value!.isEmpty) return 'Required';
+                    // Basic validation for blood pressure format (e.g., 120/80)
+                    if (!RegExp(r'^\d{2,3}/\d{2,3}$').hasMatch(value)) {
+                      return 'Enter valid BP (e.g. 120/80)';
+                    }
+                    return null;
+                  },
                 ),
 
+                // Temperature
                 _buildInputField(
-                  label: 'Glucose (mg/dL)',
-                  hint: 'Enter glucose level',
-                  controller: _glucoseController,
-                  icon: Icons.bloodtype,
-                  validator: (value) => value!.isEmpty ? 'Required' : null,
-                  keyboardType: TextInputType.number,
+                  label: 'Temperature (°C)',
+                  hint: 'Enter temperature in Celsius',
+                  controller: _temperatureController,
+                  icon: Icons.thermostat,
+                  validator: (value) {
+                    if (value!.isEmpty) return 'Required';
+                    // Validate it's a reasonable temperature in Celsius
+                    final temp = double.tryParse(value);
+                    if (temp == null) return 'Enter a valid number';
+                    if (temp < 35 || temp > 42) {
+                      return 'Enter a valid temp (35-42°C)';
+                    }
+                    return null;
+                  },
+                  keyboardType: TextInputType.numberWithOptions(decimal: true),
                 ),
 
                 // Notes
@@ -403,9 +420,8 @@ class _HealthLogScreenState extends State<HealthLogScreen> {
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    filled: true, // Enables the background color
-                    fillColor:
-                        Colors.white, // Sets the background color to white
+                    filled: true,
+                    fillColor: Colors.white,
                   ),
                 ),
 
@@ -423,16 +439,15 @@ class _HealthLogScreenState extends State<HealthLogScreen> {
                       ),
                     ),
                     onPressed: _isLoading ? null : _submitHealthData,
-                    child:
-                        _isLoading
-                            ? CircularProgressIndicator(color: Colors.white)
-                            : Text(
-                              'SAVE LOG',
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Colors.white,
-                              ),
+                    child: _isLoading
+                        ? CircularProgressIndicator(color: Colors.white)
+                        : Text(
+                            'SAVE LOG',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.white,
                             ),
+                          ),
                   ),
                 ),
 

@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:health_assistant/main/ai_chatbot.dart';
@@ -46,6 +47,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
       final snapshot =
           await FirebaseFirestore.instance
               .collection('health_logs')
+              .where(
+                'user_id',
+                isEqualTo: FirebaseAuth.instance.currentUser?.uid,
+              ) // Add this line
               .orderBy('timestamp', descending: true)
               .limit(1)
               .get();
@@ -53,7 +58,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       if (snapshot.docs.isNotEmpty) {
         final data = snapshot.docs.first.data();
         setState(() {
-          _heartRate = data['pulse']?.toString() ?? '--';
+          _heartRate = data['heart_rate']?.toString() ?? '--';
           _bloodPressure = data['blood_pressure']?.toString() ?? '--/--';
           _temperature = data['temperature']?.toString() ?? '--';
           _updateHealthStatus(data);
@@ -134,7 +139,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         centerTitle: true,
         backgroundColor: primaryDark,
         elevation: 0,
-        
+
         actions: [
           IconButton(
             icon: Icon(Icons.account_circle, color: Colors.white, size: 30),
@@ -291,20 +296,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
               },
             ),
             _buildDashboardCard(
-  context: context,
-  title: 'Steps Counter',
-  icon: Icons.directions_walk, // Changed to an appropriate icon for steps counter
-  color: Color.fromARGB(255, 42, 132, 143), // You can change the color if needed
-  onTap: () {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => StepsCounterScreen(),
-      ),
-    );
-  },
-)
-
+              context: context,
+              title: 'Steps Counter',
+              icon:
+                  Icons
+                      .directions_walk, // Changed to an appropriate icon for steps counter
+              color: Color.fromARGB(
+                255,
+                42,
+                132,
+                143,
+              ), // You can change the color if needed
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => StepsCounterScreen()),
+                );
+              },
+            ),
           ],
         );
       },
@@ -606,9 +615,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (context) => VoiceMedicalAssistant(),
-          ),
+          MaterialPageRoute(builder: (context) => VoiceMedicalAssistant()),
         );
       },
       child: Container(
