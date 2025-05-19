@@ -393,12 +393,27 @@ class _SymptomInputScreenState extends State<SymptomInputScreen> {
       List<String> specializations) {
     try {
       // Find doctors with matching specialization and city
-      List<Map<String, dynamic>> matchingDoctors = _allDoctors.where((doc) {
-        return specializations.any((spec) => doc['Specialization']
-            .toString()
-            .toLowerCase()
-            .contains(spec.toLowerCase()));
-      }).toList();
+      List<Map<String, dynamic>> matchingDoctors = [];
+      
+      for (var doc in _allDoctors) {
+        // Check if any of the specializations partially matches the doctor's specialization
+        bool matches = specializations.any((spec) {
+          // Split both strings into words and check for any word matches
+          List<String> specWords = spec.toLowerCase().split(' ');
+          List<String> docSpecWords = doc['Specialization'].toString().toLowerCase().split(' ');
+          
+          // Check if any word from the specialization matches any word in doctor's specialization
+          return specWords.any((specWord) => 
+              docSpecWords.any((docWord) => docWord.contains(specWord) || specWord.contains(docWord)));
+        });
+
+        if (matches) {
+          matchingDoctors.add(doc);
+        }
+
+        // Limit to 5 doctors
+        if (matchingDoctors.length >= 5) break;
+      }
 
       // Filter by city if we have the current city
       if (_currentCity.isNotEmpty) {
@@ -410,8 +425,7 @@ class _SymptomInputScreenState extends State<SymptomInputScreen> {
         }).toList();
       }
 
-      // Take up to 5 doctors
-      return matchingDoctors.take(5).toList();
+      return matchingDoctors;
     } catch (e) {
       print('Error finding doctors: $e');
       return [];
