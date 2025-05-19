@@ -90,7 +90,7 @@ class _ReportScannerState extends State<ReportScanner> {
       const apiBase = "http://203.6.209.25:5010";
 
       const prompt = """
-You are a compassionate medical-report analysis assistant. Parse the following clinical document and extract its information with sensitivity and accuracy. Return the response formatted exactly as plain text with section headings and simple lines—do not use asterisks, hashtags, or any special characters. Include a brief sentiment analysis at the end.
+You are a compassionate medical-report analysis assistant. Parse the following clinical document and extract its information with sensitivity and accuracy. Return the response formatted exactly as plain text with section headings and simple lines—do not use asterisks, hashtags, or any special characters also any brackets{}()[] or other symbols.. Include a brief sentiment analysis at the end.
 
 Patient Information:
 Name: [patient name here]
@@ -119,11 +119,12 @@ Estimated Patient Emotional Context: [e.g. concerned, hopeful, anxious]
 
 Important Notes:
 1. Verify medication names against a trusted medical lexicon (for example, RxNorm) and correct any spelling errors.
-2. List only the medication names under "Medications"—do not include any dosage, strength, or frequency.
+2. List only the medication names under "Medications"—do not include any dosage, strength, or frequency word "tab" fellow this strictly.
 3. If a field cannot be found, leave its value blank.
 4. Do not mix up fields—keep each piece of data under its proper heading.
 5. Do not add any extra commentary, sections, or formatting beyond what is requested.
 6. Preserve these exact headings and plain-text formatting.
+7. dont include any etra words expect the mentiones above.
 """;
 
       var request = http.MultipartRequest('POST', Uri.parse('$apiBase/vision'));
@@ -138,7 +139,7 @@ Important Notes:
 
       var response = await request.send();
       var responseData = await response.stream.bytesToString();
-
+      print(responseData);
       if (response.statusCode == 200) {
         _processResponse(responseData);
       } else {
@@ -268,6 +269,7 @@ Important Notes:
     for (var med in _extractedMedicines) {
       // Extract just the medicine name (without dosage)
       String medName = med.split('(')[0].trim();
+      print("MedName: $medName");
 
       // Find exact or partial matches
       var matches =
@@ -553,20 +555,23 @@ Important Notes:
                     horizontal: 15,
                   ),
                   decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
-                  gradient: LinearGradient(
-                    colors: [accentLight.withOpacity(0.3), primaryLight.withOpacity(0.3)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black12,
-                      blurRadius: 10,
-                      offset: Offset(0, 4),
+                    borderRadius: BorderRadius.circular(20),
+                    gradient: LinearGradient(
+                      colors: [
+                        accentLight.withOpacity(0.3),
+                        primaryLight.withOpacity(0.3),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
-                  ],
-                ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black12,
+                        blurRadius: 10,
+                        offset: Offset(0, 4),
+                      ),
+                    ],
+                  ),
                   child: Column(
                     children: [
                       Icon(Icons.medication_liquid, size: 50, color: primary),
@@ -626,7 +631,7 @@ Important Notes:
                               child: Padding(
                                 padding: const EdgeInsets.only(
                                   left: 20.0,
-                                  right:20.0,
+                                  right: 20.0,
                                 ),
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,

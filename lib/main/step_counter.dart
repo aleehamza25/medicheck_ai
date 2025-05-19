@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
-import 'package:shimmer/shimmer.dart';
 import 'package:pedometer/pedometer.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class StepsCounterScreen extends StatefulWidget {
   @override
@@ -25,96 +25,118 @@ class _StepsCounterScreenState extends State<StepsCounterScreen> {
 
   // Firebase and state variables
   User? _currentUser;
-  bool _isLoading = false;
-  int _currentSteps = 0;
+  bool _isLoading = true; // Initialize as true to show loader initially
   int _todaySteps = 0;
   String _currentDate = '';
   late StreamSubscription<StepCount> _stepCountSubscription;
-  late StreamSubscription<PedestrianStatus> _pedestrianStatusSubscription;
-  String _status = 'Waiting for steps...';
+  String _status = 'Initializing...';
   DateTime? _lastUpdated;
-  int _lastStoredSteps = 0; // Track last stored steps to calculate difference
+  bool _isSyncing = false;
 
-  // History variables
-  final ScrollController _scrollController = ScrollController();
-  List<DocumentSnapshot> _recentEntries = [];
-  bool _hasMore = true;
-  bool _isLoadingMore = false;
-  int _perPage = 5;
-  DocumentSnapshot? _lastDocument;
+  // For tracking steps since midnight
+  int _stepsAtMidnight = 0;
+  bool _gotInitialSteps = false;
+  bool _initializationComplete = false;
 
   @override
   void initState() {
     super.initState();
     _currentUser = FirebaseAuth.instance.currentUser;
     _currentDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
-    _initStepsCounter();
-    _loadInitialEntries();
-    _scrollController.addListener(_scrollListener);
+    _initializeApp();
+  }
+
+  Future<void> _initializeApp() async {
+    try {
+      await _initStepsCounter();
+      await _checkDailyReset();
+    } catch (e) {
+      _showError("Initialization failed: ${e.toString()}");
+    } finally {
+      setState(() {
+        _isLoading = false;
+        _initializationComplete = true;
+      });
+    }
   }
 
   @override
   void dispose() {
     _stepCountSubscription.cancel();
-    _pedestrianStatusSubscription.cancel();
-    _scrollController.dispose();
     super.dispose();
   }
 
   Future<void> _initStepsCounter() async {
-    setState(() => _isLoading = true);
+    // Check and request permissions
+    final status = await Permission.activityRecognition.request();
+    if (!status.isGranted) {
+      throw Exception("Activity recognition permission denied");
+    }
+
+    // Initialize step stream
+    _stepCountSubscription = Pedometer.stepCountStream.listen(
+      _onStepCount,
+      onError: _onStepError,
+    );
+
+    // Load today's steps from Firestore
+    await _loadTodaySteps();
+  }
+
+  Future<void> _checkDailyReset() async {
+    final prefs = await SharedPreferences.getInstance();
+    final lastResetDate = prefs.getString('lastResetDate');
+    final currentDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
     
-    try {
-      // Check and request permissions
-      final status = await Permission.activityRecognition.request();
-      if (!status.isGranted) {
-        _showError("Activity recognition permission is required to count steps");
-        return;
-      }
-
-      // Initialize step stream
-      _stepCountSubscription = Pedometer.stepCountStream.listen(
-        _onStepCount,
-        onError: _onStepError,
-      );
-
-      _pedestrianStatusSubscription = Pedometer.pedestrianStatusStream.listen(
-        _onPedestrianStatusChanged,
-        onError: _onStepError,
-      );
-
-      // Load today's steps from Firestore
-      await _loadTodaySteps();
-    } catch (e) {
-      _showError("Failed to initialize step counter: ${e.toString()}");
-    } finally {
-      setState(() => _isLoading = false);
+    if (lastResetDate != currentDate) {
+      // New day - reset steps
+      final initialSteps = await Pedometer.stepCountStream.first;
+      await prefs.setString('lastResetDate', currentDate);
+      setState(() {
+        _stepsAtMidnight = initialSteps.steps;
+        _todaySteps = 0;
+        _gotInitialSteps = true;
+        _status = 'Ready';
+      });
+      await _updateTodaySteps();
+    } else if (!_gotInitialSteps) {
+      // Not a new day, but we need initial steps
+      final initialSteps = await Pedometer.stepCountStream.first;
+      setState(() {
+        _stepsAtMidnight = initialSteps.steps - _todaySteps;
+        _gotInitialSteps = true;
+        _status = 'Ready';
+      });
     }
   }
 
   void _onStepCount(StepCount event) {
+    if (!_gotInitialSteps) return;
+
     final now = DateTime.now();
     final today = DateFormat('yyyy-MM-dd').format(now);
     
+    // Calculate steps taken since midnight
+    final currentStepsSinceMidnight = event.steps - _stepsAtMidnight;
+    
+    // Ensure steps can't be negative
+    final todaySteps = currentStepsSinceMidnight > 0 ? currentStepsSinceMidnight : 0;
+
     setState(() {
       _lastUpdated = now;
-      _currentSteps = event.steps.toInt(); // Explicit conversion to int
+      _todaySteps = todaySteps;
+      _status = 'Counting steps...';
       
       // Reset if it's a new day
       if (today != _currentDate) {
         _currentDate = today;
         _todaySteps = 0;
-        _lastStoredSteps = 0;
+        _stepsAtMidnight = event.steps;
+        _checkDailyReset();
       }
     });
 
     _updateTodaySteps();
-  }
-
-  void _onPedestrianStatusChanged(PedestrianStatus event) {
-    setState(() {
-      _status = event.status;
-    });
   }
 
   void _onStepError(error) {
@@ -135,8 +157,7 @@ class _StepsCounterScreenState extends State<StepsCounterScreen> {
 
       if (doc.exists) {
         setState(() {
-          _todaySteps = (doc['steps'] as num).toInt(); // Ensure int type
-          _lastStoredSteps = _todaySteps;
+          _todaySteps = (doc['steps'] as num).toInt();
         });
       }
     } catch (e) {
@@ -145,96 +166,25 @@ class _StepsCounterScreenState extends State<StepsCounterScreen> {
   }
 
   Future<void> _updateTodaySteps() async {
-    if (_currentUser == null) return;
+    if (_currentUser == null || _isSyncing) return;
 
+    setState(() => _isSyncing = true);
+    
     try {
-      // Calculate the difference since last update
-      final stepsDifference = _currentSteps - _lastStoredSteps;
-      
-      // Only update if there's a significant change (to prevent too many writes)
-      if (stepsDifference.abs() > 5) {
-        final newSteps = _todaySteps + stepsDifference;
-        
-        await FirebaseFirestore.instance
-            .collection('steps_logs')
-            .doc('${_currentUser!.uid}_$_currentDate')
-            .set({
-          'steps': newSteps,
-          'date': _currentDate,
-          'timestamp': FieldValue.serverTimestamp(),
-          'user_id': _currentUser!.uid,
-        }, SetOptions(merge: true));
-
-        setState(() {
-          _todaySteps = newSteps;
-          _lastStoredSteps = _currentSteps;
-        });
-      }
+      await FirebaseFirestore.instance
+          .collection('steps_logs')
+          .doc('${_currentUser!.uid}_$_currentDate')
+          .set({
+        'steps': _todaySteps,
+        'date': _currentDate,
+        'timestamp': FieldValue.serverTimestamp(),
+        'user_id': _currentUser!.uid,
+        'formatted_date': DateFormat('MMMM d, y').format(DateTime.now()),
+      }, SetOptions(merge: true));
     } catch (e) {
       print('Error updating steps: $e');
-    }
-  }
-
-  Future<void> _loadInitialEntries() async {
-    if (_currentUser == null) return;
-
-    setState(() => _isLoading = true);
-    try {
-      final query = FirebaseFirestore.instance
-          .collection('steps_logs')
-          .where('user_id', isEqualTo: _currentUser!.uid)
-          .orderBy('timestamp', descending: true)
-          .limit(_perPage);
-
-      final snapshot = await query.get();
-      if (snapshot.docs.isNotEmpty) {
-        _lastDocument = snapshot.docs.last;
-      }
-
-      setState(() {
-        _recentEntries = snapshot.docs;
-        _hasMore = snapshot.docs.length == _perPage;
-      });
-    } catch (e) {
-      _showError('Error loading entries: $e');
     } finally {
-      setState(() => _isLoading = false);
-    }
-  }
-
-  Future<void> _loadMoreEntries() async {
-    if (_currentUser == null || !_hasMore || _isLoadingMore) return;
-
-    setState(() => _isLoadingMore = true);
-    try {
-      final query = FirebaseFirestore.instance
-          .collection('steps_logs')
-          .where('user_id', isEqualTo: _currentUser!.uid)
-          .orderBy('timestamp', descending: true)
-          .startAfterDocument(_lastDocument!)
-          .limit(_perPage);
-
-      final snapshot = await query.get();
-      if (snapshot.docs.isNotEmpty) {
-        _lastDocument = snapshot.docs.last;
-      }
-
-      setState(() {
-        _recentEntries.addAll(snapshot.docs);
-        _hasMore = snapshot.docs.length == _perPage;
-      });
-    } catch (e) {
-      _showError('Error loading more entries: $e');
-    } finally {
-      setState(() => _isLoadingMore = false);
-    }
-  }
-
-  void _scrollListener() {
-    if (_scrollController.offset >=
-            _scrollController.position.maxScrollExtent &&
-        !_scrollController.position.outOfRange) {
-      _loadMoreEntries();
+      setState(() => _isSyncing = false);
     }
   }
 
@@ -314,167 +264,29 @@ class _StepsCounterScreenState extends State<StepsCounterScreen> {
               '${(_todaySteps / 10000 * 100).toStringAsFixed(1)}% of daily goal',
               style: TextStyle(color: Colors.white),
             ),
+            if (_isSyncing)
+              Padding(
+                padding: EdgeInsets.only(top: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    ),
+                    SizedBox(width: 8),
+                    Text(
+                      'Syncing...',
+                      style: TextStyle(color: Colors.white70, fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatsRow() {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _buildStatItem(Icons.directions_walk, 'Today', '$_todaySteps'),
-          _buildStatItem(Icons.calendar_view_week, 'Avg Weekly', 'Calculating...'),
-          _buildStatItem(Icons.emoji_events, 'Record', 'Loading...'),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatItem(IconData icon, String label, String value) {
-    return Column(
-      children: [
-        Icon(icon, size: 30, color: primaryColor),
-        SizedBox(height: 8),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: textColor,
-          ),
-        ),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 14,
-            color: Colors.grey,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildRecentEntriesList() {
-    if (_isLoading) {
-      return _buildShimmerLoader();
-    }
-
-    if (_recentEntries.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: EdgeInsets.all(16),
-          child: Text(
-            'No step history yet. Start walking to record your steps!',
-            style: TextStyle(color: Colors.grey),
-          ),
-        ),
-      );
-    }
-
-    return Column(
-      children: [
-        ListView.builder(
-          shrinkWrap: true,
-          physics: NeverScrollableScrollPhysics(),
-          itemCount: _recentEntries.length,
-          itemBuilder: (context, index) {
-            final entry = _recentEntries[index].data() as Map<String, dynamic>;
-            return _buildEntryCard(entry);
-          },
-        ),
-        if (_isLoadingMore)
-          Padding(
-            padding: EdgeInsets.all(16),
-            child: Center(child: CircularProgressIndicator()),
-          ),
-      ],
-    );
-  }
-
-  Widget _buildEntryCard(Map<String, dynamic> entry) {
-    final date = entry['date'] ?? '';
-    final steps = (entry['steps'] as num).toInt(); // Ensure int type
-    final progress = steps / 10000;
-
-    return Card(
-      color: Colors.white,
-      elevation: 2,
-      margin: EdgeInsets.only(bottom: 12, left: 16, right: 16),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  date,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: primaryColor,
-                    fontSize: 16,
-                  ),
-                ),
-                Text(
-                  '$steps steps',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: accentColor,
-                    fontSize: 16,
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 12),
-            LinearProgressIndicator(
-              value: progress > 1 ? 1 : progress,
-              backgroundColor: Colors.grey[200],
-              valueColor: AlwaysStoppedAnimation<Color>(primaryLight),
-              minHeight: 6,
-              borderRadius: BorderRadius.circular(3),
-            ),
-            SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  '${(progress * 100).toStringAsFixed(1)}% of goal',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey,
-                  ),
-                ),
-                if (progress >= 1)
-                  Icon(Icons.check_circle, color: accentColor, size: 16),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildShimmerLoader() {
-    return Shimmer.fromColors(
-      baseColor: Colors.grey.shade300,
-      highlightColor: Colors.grey.shade100,
-      child: Column(
-        children: List.generate(
-          3,
-          (index) => Container(
-            margin: EdgeInsets.only(bottom: 12, left: 16, right: 16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            height: 100,
-          ),
         ),
       ),
     );
@@ -490,45 +302,50 @@ class _StepsCounterScreenState extends State<StepsCounterScreen> {
         elevation: 0,
         centerTitle: true,
         iconTheme: IconThemeData(color: Colors.white),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.refresh),
+            onPressed: () async {
+              setState(() => _isLoading = true);
+              await _initializeApp();
+            },
+          ),
+        ],
       ),
-      body: RefreshIndicator(
-        onRefresh: () async {
-          await _loadTodaySteps();
-          await _loadInitialEntries();
-        },
-        child: SingleChildScrollView(
-          controller: _scrollController,
-          physics: AlwaysScrollableScrollPhysics(),
-          child: Column(
-            children: [
-              _buildStepCounterCard(),
-              SizedBox(height: 24),
-              _buildStatsRow(),
-              SizedBox(height: 24),
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16),
-                child: Divider(height: 1),
-              ),
-              SizedBox(height: 16),
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16),
-                child: Text(
-                  'YOUR STEP HISTORY',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: primaryColor,
-                    letterSpacing: 1.1,
+      body: _isLoading
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 20),
+                  Text(
+                    'Initializing step counter...',
+                    style: TextStyle(fontSize: 16),
                   ),
+                ],
+              ),
+            )
+          : RefreshIndicator(
+              onRefresh: () async {
+                setState(() => _isLoading = true);
+                await _initializeApp();
+              },
+              child: SingleChildScrollView(
+                physics: AlwaysScrollableScrollPhysics(),
+                child: Column(
+                  children: [
+                    _buildStepCounterCard(),
+                    SizedBox(height: 20),
+                    if (!_gotInitialSteps && !_isLoading)
+                      Padding(
+                        padding: EdgeInsets.all(16),
+                        child: CircularProgressIndicator(),
+                      ),
+                  ],
                 ),
               ),
-              SizedBox(height: 16),
-              _buildRecentEntriesList(),
-              SizedBox(height: 20),
-            ],
-          ),
-        ),
-      ),
+            ),
     );
   }
 }

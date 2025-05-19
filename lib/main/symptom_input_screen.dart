@@ -21,6 +21,7 @@ class _SymptomInputScreenState extends State<SymptomInputScreen> {
   List<Map<String, dynamic>> _chatHistory = [];
   String _currentCity = '';
   bool _locationLoading = false;
+  List<String> _recommendedSpecializations = [];
 
   List<Map<String, dynamic>> _allMedicines = [];
   List<Map<String, dynamic>> _allDoctors = [];
@@ -123,8 +124,7 @@ class _SymptomInputScreenState extends State<SymptomInputScreen> {
           height: MediaQuery.of(context).size.height * 0.8,
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
-          ),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(25))),
           padding: EdgeInsets.all(20),
           child: Column(
             children: [
@@ -165,14 +165,11 @@ class _SymptomInputScreenState extends State<SymptomInputScreen> {
                   ),
                   onChanged: (value) {
                     setState(() {
-                      filteredCities =
-                          _pakistanCities
-                              .where(
-                                (city) => city.toLowerCase().contains(
-                                  value.toLowerCase(),
-                                ),
-                              )
-                              .toList();
+                      filteredCities = _pakistanCities
+                          .where((city) => city.toLowerCase().contains(
+                                value.toLowerCase(),
+                              ))
+                          .toList();
                     });
                   },
                 ),
@@ -285,12 +282,14 @@ class _SymptomInputScreenState extends State<SymptomInputScreen> {
   Future<void> _loadJsonData() async {
     try {
       // Load medicines data
-      final medicinesString = await rootBundle.loadString('assets/json/medicines.json');
+      final medicinesString =
+          await rootBundle.loadString('assets/json/medicines.json');
       final medicinesJson = json.decode(medicinesString) as List;
       _allMedicines = medicinesJson.cast<Map<String, dynamic>>();
 
       // Load doctors data
-      final doctorsString = await rootBundle.loadString('assets/json/doctors.json');
+      final doctorsString =
+          await rootBundle.loadString('assets/json/doctors.json');
       final doctorsJson = json.decode(doctorsString) as List;
       _allDoctors = doctorsJson.cast<Map<String, dynamic>>();
     } catch (e) {
@@ -340,10 +339,9 @@ class _SymptomInputScreenState extends State<SymptomInputScreen> {
       for (var med in _allMedicines) {
         // Check if medicine name or composition contains any of the relevant keywords
         bool matches = medicineTypes.any(
-          (type) =>
-              med['Medicine Name'].toString().toLowerCase().contains(type) ||
-              med['Composition'].toString().toLowerCase().contains(type),
-        );
+            (type) =>
+                med['Medicine Name'].toString().toLowerCase().contains(type) ||
+                med['Composition'].toString().toLowerCase().contains(type));
 
         if (matches) {
           matchingMedicines.add(med);
@@ -365,11 +363,11 @@ class _SymptomInputScreenState extends State<SymptomInputScreen> {
     try {
       // Find the original medicine
       final originalMedicine = _allMedicines.firstWhere(
-        (med) => med['Medicine Name'].toString().toLowerCase().contains(
-          medicineName.toLowerCase(),
-        ),
-        orElse: () => <String, dynamic>{},
-      );
+          (med) => med['Medicine Name']
+              .toString()
+              .toLowerCase()
+              .contains(medicineName.toLowerCase()),
+          orElse: () => <String, dynamic>{});
 
       if (originalMedicine.isEmpty) return [];
 
@@ -377,11 +375,10 @@ class _SymptomInputScreenState extends State<SymptomInputScreen> {
       final composition = originalMedicine['Composition'] as String;
 
       // Find all medicines with similar composition
-      final similarMedicines =
-          _allMedicines.where((med) {
-            return med['Composition'] == composition &&
-                med['Medicine Name'] != originalMedicine['Medicine Name'];
-          }).toList();
+      final similarMedicines = _allMedicines.where((med) {
+        return med['Composition'] == composition &&
+            med['Medicine Name'] != originalMedicine['Medicine Name'];
+      }).toList();
 
       // Take up to 5 random similar medicines
       similarMedicines.shuffle();
@@ -392,47 +389,25 @@ class _SymptomInputScreenState extends State<SymptomInputScreen> {
     }
   }
 
-  List<Map<String, dynamic>> _findDoctorsBySpecialization(String condition) {
+  List<Map<String, dynamic>> _findDoctorsBySpecialization(
+      List<String> specializations) {
     try {
-      // Simple mapping between conditions and specializations
-      final conditionToSpecialization = {
-        'headache': 'Neurologist',
-        'fever': 'General Physician',
-        'cough': 'Pulmonologist',
-        'pain': 'Pain Specialist',
-        'dizziness': 'Neurologist',
-        'breath': 'Pulmonologist',
-        'chest': 'Cardiologist',
-        'joint': 'Rheumatologist',
-        'throat': 'ENT Specialist',
-        'stomach': 'Gastroenterologist',
-      };
-
-      // Find the most relevant specialization
-      String specialization = 'General Physician'; // default
-      for (var key in conditionToSpecialization.keys) {
-        if (condition.toLowerCase().contains(key)) {
-          specialization = conditionToSpecialization[key]!;
-          break;
-        }
-      }
-
       // Find doctors with matching specialization and city
-      List<Map<String, dynamic>> matchingDoctors =
-          _allDoctors.where((doc) {
-            return doc['Specialization'].toString().toLowerCase().contains(
-              specialization.toLowerCase(),
-            );
-          }).toList();
+      List<Map<String, dynamic>> matchingDoctors = _allDoctors.where((doc) {
+        return specializations.any((spec) => doc['Specialization']
+            .toString()
+            .toLowerCase()
+            .contains(spec.toLowerCase()));
+      }).toList();
 
       // Filter by city if we have the current city
       if (_currentCity.isNotEmpty) {
-        matchingDoctors =
-            matchingDoctors.where((doc) {
-              return doc['City'].toString().toLowerCase().contains(
-                _currentCity.toLowerCase(),
-              );
-            }).toList();
+        matchingDoctors = matchingDoctors.where((doc) {
+          return doc['City']
+              .toString()
+              .toLowerCase()
+              .contains(_currentCity.toLowerCase());
+        }).toList();
       }
 
       // Take up to 5 doctors
@@ -453,6 +428,7 @@ class _SymptomInputScreenState extends State<SymptomInputScreen> {
       _recommendedActions = [];
       _medicationSuggestions = [];
       _doctorSuggestions = [];
+      _recommendedSpecializations = [];
     });
 
     try {
@@ -465,15 +441,29 @@ Provide response in this exact JSON format (keep responses concise):
   "analysis": "Brief 1-2 sentence medical summary",
   "possible_conditions": ["Condition 1", "Condition 2", "Condition 3"],
   "recommended_actions": ["Action 1", "Action 2", "Action 3"],
-  "medication_names": ["Medicine 1 (OTC)", "Medicine 2 (if prescribed)", "Medicine 3 (if severe)"]
+  "recommended_specializations": ["Specialist 1", "Specialist 2"],
+  "medication_suggestions": [
+    {
+      "name": "Medicine 1",
+      "composition": "Active ingredients",
+      "purpose": "What it treats",
+      "prescription_required": true/false
+    },
+    {
+      "name": "Medicine 2",
+      "composition": "Active ingredients",
+      "purpose": "What it treats",
+      "prescription_required": true/false
+    }
+  ]
 }
 
 Important:
+- Suggest 2-3 most relevant medical Specialization flied like Dermatologist, Gastroenterologist, etc.
+- For medications, provide exact composition details when possible
+- Clearly mark prescription requirements
 - Only suggest common OTC medications when appropriate
-- Always include "consult doctor" for prescription medications
-- Never suggest dangerous combinations
-- Mark prescription medications clearly
-- Provide exact medicine names that might be available in pharmacies
+- Always include "consult doctor" for serious symptoms
 """;
 
       // Add user message to chat history
@@ -490,7 +480,7 @@ Important:
           "messages": _chatHistory,
           "model": MODEL,
           "temperature": 0.7,
-          "max_completion_tokens": 400,
+          "max_completion_tokens": 500,
           "top_p": 1,
           "stop": null,
         }),
@@ -501,80 +491,101 @@ Important:
         final aiResponse = data['choices'][0]['message']['content'];
 
         // Clean response by removing markdown formatting
-        String cleanResponse =
-            aiResponse
-                .replaceAll('**', '')
-                .replaceAll('```', '')
-                .replaceAll('json', '')
-                .trim();
+        String cleanResponse = aiResponse
+            .replaceAll('**', '')
+            .replaceAll('```', '')
+            .replaceAll('json', '')
+            .trim();
 
         // Try to parse the JSON response
         try {
           final parsedResponse = jsonDecode(cleanResponse);
           setState(() {
             _analysisResult =
-                parsedResponse['analysis'] ??
-                'No specific condition identified';
-            _possibleConditions = List<String>.from(
-              parsedResponse['possible_conditions'] ?? [],
-            );
-            _recommendedActions = List<String>.from(
-              parsedResponse['recommended_actions'] ?? [],
-            );
+                parsedResponse['analysis'] ?? 'No specific condition identified';
+            _possibleConditions =
+                List<String>.from(parsedResponse['possible_conditions'] ?? []);
+            _recommendedActions =
+                List<String>.from(parsedResponse['recommended_actions'] ?? []);
+            _recommendedSpecializations = List<String>.from(
+                parsedResponse['recommended_specializations'] ?? []);
 
             // Process medication suggestions
-            final medicationNames = List<String>.from(
-              parsedResponse['medication_names'] ?? [],
-            );
-            _medicationSuggestions = [];
+            if (parsedResponse['medication_suggestions'] != null) {
+              final List<dynamic> medSuggestions =
+                  parsedResponse['medication_suggestions'];
+              _medicationSuggestions = [];
 
-            // First try to find exact matches from our medicines.json
-            for (var medName in medicationNames) {
-              // Skip "consult doctor" entries
-              if (medName.toLowerCase().contains('consult')) continue;
+              for (var med in medSuggestions) {
+                // Try to find exact matches from our medicines.json
+                try {
+                  final exactMatch = _allMedicines.firstWhere((m) =>
+                      m['Medicine Name']
+                          .toString()
+                          .toLowerCase()
+                          .contains(med['name'].toString().toLowerCase()));
 
-              // Find similar medicines
-              final similarMeds = _findSimilarMedicines(medName);
+                  _medicationSuggestions.add({
+                    'name': exactMatch['Medicine Name'],
+                    'composition': exactMatch['Composition'],
+                    'purpose': med['purpose'] ?? 'For ${_possibleConditions.isNotEmpty ? _possibleConditions[0] : 'symptom relief'}',
+                    'prescription_required': med['prescription_required'] ?? false,
+                    'similar': _findSimilarMedicines(exactMatch['Medicine Name']),
+                  });
+                } catch (e) {
+                  // If no exact match, try to find by composition
+                  try {
+                    final compositionMatch = _allMedicines.firstWhere((m) =>
+                        m['Composition']
+                            .toString()
+                            .toLowerCase()
+                            .contains(med['composition'].toString().toLowerCase()));
 
-              // Add the original medicine if found
-              try {
-                final originalMed = _allMedicines.firstWhere(
-                  (med) => med['Medicine Name']
-                      .toString()
-                      .toLowerCase()
-                      .contains(medName.toLowerCase()),
-                );
-
-                _medicationSuggestions.add({
-                  'name': originalMed['Medicine Name'],
-                  'composition': originalMed['Composition'],
-                  'similar': similarMeds,
-                });
-              } catch (e) {
-                print('Error processing exact medicine match: $e');
+                    _medicationSuggestions.add({
+                      'name': compositionMatch['Medicine Name'],
+                      'composition': compositionMatch['Composition'],
+                      'purpose': med['purpose'] ?? 'For ${_possibleConditions.isNotEmpty ? _possibleConditions[0] : 'symptom relief'}',
+                      'prescription_required': med['prescription_required'] ?? false,
+                      'similar': _findSimilarMedicines(compositionMatch['Medicine Name']),
+                    });
+                  } catch (e) {
+                    // If still no match, add the AI-suggested medicine as is
+                    _medicationSuggestions.add({
+                      'name': med['name'],
+                      'composition': med['composition'],
+                      'purpose': med['purpose'] ?? 'For ${_possibleConditions.isNotEmpty ? _possibleConditions[0] : 'symptom relief'}',
+                      'prescription_required': med['prescription_required'] ?? false,
+                      'similar': [],
+                    });
+                  }
+                }
               }
             }
 
-            // If we didn't find exact matches, try to find medicines based on condition
-            if (_medicationSuggestions.isEmpty &&
-                _possibleConditions.isNotEmpty) {
-              final conditionBasedMeds = _findMedicinesForCondition(
-                _possibleConditions[0],
-              );
+            // If no medications from AI, try to find based on condition
+            if (_medicationSuggestions.isEmpty && _possibleConditions.isNotEmpty) {
+              final conditionBasedMeds =
+                  _findMedicinesForCondition(_possibleConditions[0]);
               for (var med in conditionBasedMeds) {
                 _medicationSuggestions.add({
                   'name': med['Medicine Name'],
                   'composition': med['Composition'],
+                  'purpose': 'For ${_possibleConditions[0]}',
+                  'prescription_required': false,
                   'similar': _findSimilarMedicines(med['Medicine Name']),
                 });
               }
             }
 
-            // Find doctors for the primary condition
-            if (_possibleConditions.isNotEmpty) {
-              _doctorSuggestions = _findDoctorsBySpecialization(
-                _possibleConditions[0],
-              );
+            // Find doctors for the recommended specializations
+            if (_recommendedSpecializations.isNotEmpty) {
+              print('receommended specializations: ${_recommendedSpecializations}');
+              _doctorSuggestions =
+                  _findDoctorsBySpecialization(_recommendedSpecializations);
+            } else if (_possibleConditions.isNotEmpty) {
+              // Fallback if no specializations were provided
+              _doctorSuggestions =
+                  _findDoctorsBySpecialization(_possibleConditions);
             }
           });
         } catch (e) {
@@ -639,31 +650,30 @@ Important:
             onPressed: () {
               showDialog(
                 context: context,
-                builder:
-                    (context) => AlertDialog(
-                      title: Text(
-                        'Disclaimer',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: primaryDark,
-                        ),
-                      ),
-                      content: Text(
-                        'This tool provides preliminary health information only. Medication suggestions are for reference and must be approved by a healthcare professional. Never self-medicate without proper medical advice.',
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: Text(
-                            'I Understand',
-                            style: TextStyle(color: primary),
-                          ),
-                        ),
-                      ],
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(15),
+                builder: (context) => AlertDialog(
+                  title: Text(
+                    'Disclaimer',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: primaryDark,
+                    ),
+                  ),
+                  content: Text(
+                    'This tool provides preliminary health information only. Medication suggestions are for reference and must be approved by a healthcare professional. Never self-medicate without proper medical advice.',
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: Text(
+                        'I Understand',
+                        style: TextStyle(color: primary),
                       ),
                     ),
+                  ],
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                ),
               );
             },
           ),
@@ -815,32 +825,31 @@ Important:
                           elevation: 0,
                         ),
                         onPressed: _isLoading ? null : _submitSymptom,
-                        child:
-                            _isLoading
-                                ? SizedBox(
-                                  height: 20,
-                                  width: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                      Colors.white,
+                        child: _isLoading
+                            ? SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Colors.white,
+                                  ),
+                                ),
+                              )
+                            : Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.analytics_outlined, size: 20),
+                                  SizedBox(width: 10),
+                                  Text(
+                                    'Analyze Symptoms',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w500,
                                     ),
                                   ),
-                                )
-                                : Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(Icons.analytics_outlined, size: 20),
-                                    SizedBox(width: 10),
-                                    Text(
-                                      'Analyze Symptoms',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                                ],
+                              ),
                       ),
                     ),
                   ],
@@ -879,47 +888,95 @@ Important:
                     icon: Icons.assignment_rounded,
                     title: 'Differential Diagnosis',
                     content: Column(
-                      children:
-                          _possibleConditions
-                              .map(
-                                (condition) => Padding(
-                                  padding: EdgeInsets.symmetric(vertical: 8),
-                                  child: Row(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Container(
-                                        width: 24,
-                                        height: 24,
-                                        decoration: BoxDecoration(
-                                          color: primary.withOpacity(0.1),
-                                          shape: BoxShape.circle,
-                                        ),
-                                        child: Center(
-                                          child: Text(
-                                            '${_possibleConditions.indexOf(condition) + 1}',
-                                            style: TextStyle(
-                                              color: primary,
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 12,
-                                            ),
-                                          ),
+                      children: _possibleConditions
+                          .map(
+                            (condition) => Padding(
+                              padding: EdgeInsets.symmetric(vertical: 8),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Container(
+                                    width: 24,
+                                    height: 24,
+                                    decoration: BoxDecoration(
+                                      color: primary.withOpacity(0.1),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        '${_possibleConditions.indexOf(condition) + 1}',
+                                        style: TextStyle(
+                                          color: primary,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 12,
                                         ),
                                       ),
-                                      SizedBox(width: 12),
-                                      Expanded(
-                                        child: Text(
-                                          condition,
-                                          style: TextStyle(fontSize: 16),
-                                        ),
-                                      ),
-                                    ],
+                                    ),
                                   ),
-                                ),
-                              )
-                              .toList(),
+                                  SizedBox(width: 12),
+                                  Expanded(
+                                    child: Text(
+                                      condition,
+                                      style: TextStyle(fontSize: 16),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          )
+                          .toList(),
                     ),
                     color: primary,
+                  ),
+                ],
+
+                // Recommended Specializations
+                if (_recommendedSpecializations.isNotEmpty) ...[
+                  SizedBox(height: 20),
+                  _buildResultCard(
+                    icon: Icons.medical_services_rounded,
+                    title: 'Recommended Specialists',
+                    content: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Based on your symptoms, you should consult with:',
+                          style: TextStyle(
+                            fontSize: 15,
+                            color: Colors.grey.shade700,
+                          ),
+                        ),
+                        SizedBox(height: 10),
+                        ..._recommendedSpecializations
+                            .map(
+                              (spec) => Padding(
+                                padding: EdgeInsets.symmetric(vertical: 6),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Icon(
+                                      Icons.medical_information_rounded,
+                                      size: 20,
+                                      color: primaryLight,
+                                    ),
+                                    SizedBox(width: 10),
+                                    Expanded(
+                                      child: Text(
+                                        spec,
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            )
+                            .toList(),
+                      ],
+                    ),
+                    color: secondaryDark,
                   ),
                 ],
 
@@ -930,32 +987,30 @@ Important:
                     icon: Icons.recommend_rounded,
                     title: 'Clinical Recommendations',
                     content: Column(
-                      children:
-                          _recommendedActions
-                              .map(
-                                (action) => Padding(
-                                  padding: EdgeInsets.symmetric(vertical: 8),
-                                  child: Row(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Icon(
-                                        Icons.check_circle_rounded,
-                                        size: 20,
-                                        color: accent,
-                                      ),
-                                      SizedBox(width: 12),
-                                      Expanded(
-                                        child: Text(
-                                          action,
-                                          style: TextStyle(fontSize: 16),
-                                        ),
-                                      ),
-                                    ],
+                      children: _recommendedActions
+                          .map(
+                            (action) => Padding(
+                              padding: EdgeInsets.symmetric(vertical: 8),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Icon(
+                                    Icons.check_circle_rounded,
+                                    size: 20,
+                                    color: accent,
                                   ),
-                                ),
-                              )
-                              .toList(),
+                                  SizedBox(width: 12),
+                                  Expanded(
+                                    child: Text(
+                                      action,
+                                      style: TextStyle(fontSize: 16),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          )
+                          .toList(),
                     ),
                     color: accent,
                   ),
@@ -968,110 +1023,130 @@ Important:
                     icon: Icons.medication_rounded,
                     title: 'Medication Guidance',
                     content: Column(
-                      children:
-                          _medicationSuggestions
-                              .map(
-                                (med) => Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    // Main medicine
-                                    Padding(
-                                      padding: EdgeInsets.symmetric(
-                                        vertical: 8,
+                      children: _medicationSuggestions
+                          .map(
+                            (med) => Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Main medicine
+                                Padding(
+                                  padding: EdgeInsets.symmetric(
+                                    vertical: 8,
+                                  ),
+                                  child: Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Icon(
+                                        med['prescription_required']
+                                            ? Icons.medical_information_rounded
+                                            : Icons.medication_liquid_rounded,
+                                        size: 20,
+                                        color: med['prescription_required']
+                                            ? Colors.orange
+                                            : primaryLight,
                                       ),
-                                      child: Row(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Icon(
-                                            Icons.medical_information_rounded,
-                                            size: 20,
-                                            color: primaryLight,
-                                          ),
-                                          SizedBox(width: 12),
-                                          Expanded(
-                                            child: Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                Text(
-                                                  med['name'],
-                                                  style: TextStyle(
-                                                    fontSize: 16,
-                                                    fontWeight: FontWeight.w500,
-                                                    color: Colors.grey.shade800,
-                                                  ),
-                                                ),
-                                                SizedBox(height: 4),
-                                                Text(
-                                                  'Composition: ${med['composition']}',
-                                                  style: TextStyle(
-                                                    fontSize: 14,
-                                                    color: Colors.grey.shade600,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-
-                                    // Similar medicines
-                                    if ((med['similar'] as List)
-                                        .isNotEmpty) ...[
-                                      Padding(
-                                        padding: EdgeInsets.only(
-                                          left: 32,
-                                          top: 4,
-                                          bottom: 8,
-                                        ),
+                                      SizedBox(width: 12),
+                                      Expanded(
                                         child: Column(
                                           crossAxisAlignment:
                                               CrossAxisAlignment.start,
                                           children: [
                                             Text(
-                                              'Similar medicines:',
+                                              med['name'],
                                               style: TextStyle(
-                                                fontSize: 14,
-                                                color: Colors.grey.shade600,
-                                                fontStyle: FontStyle.italic,
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.w500,
+                                                color: Colors.grey.shade800,
                                               ),
                                             ),
                                             SizedBox(height: 4),
-                                            ...(med['similar'] as List<dynamic>)
-                                                .map(
-                                                  (similar) => Padding(
-                                                    padding: EdgeInsets.only(
-                                                      bottom: 4,
-                                                    ),
-                                                    child: Text(
-                                                      '• ${similar['Medicine Name']} (${similar['Composition']})',
-                                                      style: TextStyle(
-                                                        fontSize: 14,
-                                                        color:
-                                                            Colors
-                                                                .grey
-                                                                .shade700,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                )
-                                                .toList(),
+                                            Text(
+                                              'Composition: ${med['composition']}',
+                                              style: TextStyle(
+                                                fontSize: 14,
+                                                color: Colors.grey.shade600,
+                                              ),
+                                            ),
+                                            SizedBox(height: 4),
+                                            Text(
+                                              'Purpose: ${med['purpose']}',
+                                              style: TextStyle(
+                                                fontSize: 14,
+                                                color: Colors.grey.shade600,
+                                              ),
+                                            ),
+                                            SizedBox(height: 4),
+                                            Text(
+                                              med['prescription_required']
+                                                  ? '⚠️ Prescription required'
+                                                  : '✅ Over-the-counter',
+                                              style: TextStyle(
+                                                fontSize: 14,
+                                                color: med['prescription_required']
+                                                    ? Colors.orange
+                                                    : accent,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
                                           ],
                                         ),
                                       ),
                                     ],
-
-                                    Divider(
-                                      color: Colors.grey.shade300,
-                                      height: 16,
-                                      thickness: 1,
-                                    ),
-                                  ],
+                                  ),
                                 ),
-                              )
-                              .toList(),
+
+                                // Similar medicines
+                                if ((med['similar'] as List).isNotEmpty) ...[
+                                  Padding(
+                                    padding: EdgeInsets.only(
+                                      left: 32,
+                                      top: 4,
+                                      bottom: 8,
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'Similar medicines:',
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color: Colors.grey.shade600,
+                                            fontStyle: FontStyle.italic,
+                                          ),
+                                        ),
+                                        SizedBox(height: 4),
+                                        ...(med['similar'] as List<dynamic>)
+                                            .map(
+                                              (similar) => Padding(
+                                                padding: EdgeInsets.only(
+                                                  bottom: 4,
+                                                ),
+                                                child: Text(
+                                                  '• ${similar['Medicine Name']} (${similar['Composition']})',
+                                                  style: TextStyle(
+                                                    fontSize: 14,
+                                                    color: Colors.grey.shade700,
+                                                  ),
+                                                ),
+                                              ),
+                                            )
+                                            .toList(),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+
+                                Divider(
+                                  color: Colors.grey.shade300,
+                                  height: 16,
+                                  thickness: 1,
+                                ),
+                              ],
+                            ),
+                          )
+                          .toList(),
                     ),
                     color: secondary,
                     warning: true,
@@ -1083,59 +1158,67 @@ Important:
                   SizedBox(height: 20),
                   _buildResultCard(
                     icon: Icons.medical_services_rounded,
-                    title: 'Recommended Specialists',
+                    title: 'Available Specialists Nearby',
                     content: Column(
-                      children:
-                          _doctorSuggestions
-                              .map(
-                                (doc) => Padding(
-                                  padding: EdgeInsets.symmetric(vertical: 12),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        doc['Doctor Name'],
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w500,
-                                          color: primaryDark,
-                                        ),
-                                      ),
-                                      SizedBox(height: 4),
-                                      Text(
-                                        '${doc['Specialization']}',
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          color: secondary,
-                                        ),
-                                      ),
-                                      SizedBox(height: 4),
-                                      Text(
-                                        '${doc['Clinic / Hospital']}, ${doc['City']}',
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          color: Colors.grey.shade700,
-                                        ),
-                                      ),
-                                      SizedBox(height: 4),
-                                      Text(
-                                        'Contact: ${doc['Phone Number']}',
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          color: Colors.grey.shade700,
-                                        ),
-                                      ),
-                                      Divider(
-                                        color: Colors.grey.shade300,
-                                        height: 16,
-                                        thickness: 1,
-                                      ),
-                                    ],
+                      children: _doctorSuggestions
+                          .map(
+                            (doc) => Padding(
+                              padding: EdgeInsets.symmetric(vertical: 12),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    doc['Doctor Name'],
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w500,
+                                      color: primaryDark,
+                                    ),
                                   ),
-                                ),
-                              )
-                              .toList(),
+                                  SizedBox(height: 4),
+                                  Text(
+                                    '${doc['Specialization']}',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: secondary,
+                                    ),
+                                  ),
+                                  SizedBox(height: 4),
+                                  Text(
+                                    '${doc['Clinic / Hospital']}, ${doc['City']}',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.grey.shade700,
+                                    ),
+                                  ),
+                                  SizedBox(height: 4),
+                                  Text(
+                                    'Contact: ${doc['Phone Number']}',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.grey.shade700,
+                                    ),
+                                  ),
+                                  SizedBox(height: 8),
+                                  if (doc['Address'] != null &&
+                                      doc['Address'].toString().isNotEmpty)
+                                    Text(
+                                      'Address: ${doc['Address']}',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: Colors.grey.shade700,
+                                      ),
+                                    ),
+                                  Divider(
+                                    color: Colors.grey.shade300,
+                                    height: 16,
+                                    thickness: 1,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          )
+                          .toList(),
                     ),
                     color: primaryDark,
                   ),
@@ -1197,48 +1280,47 @@ Important:
                 Wrap(
                   spacing: 10,
                   runSpacing: 10,
-                  children:
-                      [
-                            'Headache with nausea',
-                            'Fever above 38°C',
-                            'Persistent dry cough',
-                            'Fatigue for 1 week',
-                            'Sharp abdominal pain',
-                            'Dizziness when standing',
-                            'Shortness of breath',
-                            'Chest tightness',
-                            'Joint swelling and pain',
-                            'Sore throat with fever',
-                          ]
-                          .map(
-                            (symptom) => GestureDetector(
-                              onTap: () {
-                                _symptomController.text = symptom;
-                              },
-                              child: Container(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 10,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(20),
-                                  border: Border.all(
-                                    color: primaryLight.withOpacity(0.3),
-                                    width: 1.5,
-                                  ),
-                                ),
-                                child: Text(
-                                  symptom,
-                                  style: TextStyle(
-                                    color: primary,
-                                    fontSize: 14,
-                                  ),
-                                ),
+                  children: [
+                    'Headache with nausea',
+                    'Fever above 38°C',
+                    'Persistent dry cough',
+                    'Fatigue for 1 week',
+                    'Sharp abdominal pain',
+                    'Dizziness when standing',
+                    'Shortness of breath',
+                    'Chest tightness',
+                    'Joint swelling and pain',
+                    'Sore throat with fever',
+                  ]
+                      .map(
+                        (symptom) => GestureDetector(
+                          onTap: () {
+                            _symptomController.text = symptom;
+                          },
+                          child: Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 10,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: primaryLight.withOpacity(0.3),
+                                width: 1.5,
                               ),
                             ),
-                          )
-                          .toList(),
+                            child: Text(
+                              symptom,
+                              style: TextStyle(
+                                color: primary,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                        ),
+                      )
+                      .toList(),
                 ),
                 SizedBox(height: 25),
                 Container(
@@ -1294,10 +1376,9 @@ Important:
             offset: Offset(0, 4),
           ),
         ],
-        border:
-            warning
-                ? Border.all(color: secondary.withOpacity(0.3), width: 1.5)
-                : null,
+        border: warning
+            ? Border.all(color: secondary.withOpacity(0.3), width: 1.5)
+            : null,
       ),
       padding: EdgeInsets.all(20),
       child: Column(

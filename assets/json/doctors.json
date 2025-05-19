@@ -239,7 +239,7 @@
   },
   {
     "Doctor Name": "Dr. Nasir Qureshi",
-    "Specialization": "General Physician",
+    "Specialization": "Primary Care Physician",
     "Clinic / Hospital": "CMH Hospital",
     "City": "Rawalpindi",
     "Phone Number": "051-9273420"
@@ -845,7 +845,7 @@
   },
   {
     "Doctor Name": "Dr. Shahnawaz Gardezi",
-    "Specialization": "General Physician",
+    "Specialization": "Primary Care Physician",
     "Clinic / Hospital": "City Hospital Multan",
     "City": "Multan",
     "Phone Number": "+92-303-8996353"
